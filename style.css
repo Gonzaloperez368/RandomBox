@@ -208,6 +208,17 @@ main {
   text-align: center;
 }
 
+/* Bug de ancho: .pantalla-herramienta--ancha pide max-width:1400px, pero al
+   ser hija directa de <main> quedaba igual atrapada en los 560px de acá
+   arriba (un hijo nunca puede ser más ancho que el content-box de su padre
+   en flujo normal). Eso hacía que el contenedor visible del bracket nunca
+   creciera con la pantalla, así que sobraba scroll horizontal incluso en
+   desktop. Cuando la pantalla ancha está visible, esta regla le devuelve a
+   <main> el ancho completo para que --ancha pueda usar sus 1400px de verdad. */
+main:has(.pantalla-herramienta--ancha:not([hidden])) {
+  max-width: none;
+}
+
 main p {
   color: var(--color-text-secondary);
   font-size: 0.85rem;
