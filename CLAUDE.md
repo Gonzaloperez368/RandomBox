@@ -35,7 +35,7 @@ RandomBox es una caja de herramientas web para elegir al azar, organizar persona
 
 - [x] FASE 1 — Estructura básica
 - [x] FASE 2 — Diseño general
-- [~] FASE 3 — Generador de números (modo Revelación listo; falta el modo Ruleta)
+- [x] FASE 3 — Generador de números (modo único: Ruleta)
 - [ ] FASE 4 — Selector de nombres + ruleta
 - [ ] FASE 5 — Generador de grupos
 - [ ] FASE 6 — Lanzamiento de moneda
@@ -92,4 +92,4 @@ Una sola página (`index.html`), sin router ni módulos: cada herramienta es un 
 
 ## Estado actual
 
-FASE 3 en curso: generador de números con modo Revelación (formulario mínimo/máximo/cantidad/repetidos, validación, resultado) funcionando. Falta el modo Ruleta de esta misma herramienta antes de pasar a FASE 4. No avanzar sin que el usuario lo pida.
+FASE 3 completada: generador de números con validación, siempre en modo Ruleta (animación con `setInterval`/`setTimeout` sobre casilleros `.numero-slot`). Se probó primero con un selector Revelación/Ruleta, pero el usuario prefirió sacarlo: no quiere elegir un modo cada vez que genera, prefiere una única forma fija de mostrar el resultado. **Importante para FASE 4** (selector de nombres, que el spec original también plantea con modo Revelación/Ruleta): volver a preguntar antes de asumir que va un selector de modo — puede que el usuario prefiera, de nuevo, una sola forma fija. El anuncio para lectores de pantalla vive en un elemento aparte (`#anuncio-resultado-numeros`, oculto visualmente) que se actualiza una sola vez al final, no en cada tick de la animación. Próximo paso: FASE 4 — Selector de nombres + ruleta (no avanzar sin que el usuario lo pida).

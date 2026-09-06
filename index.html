@@ -56,7 +56,9 @@
     <p id="nota-construccion">RandomBox está en construcción. Muy pronto cada herramienta va a tener su propia pantalla, acá mismo.</p>
 
     <section id="pantalla-generador-numeros" class="pantalla-herramienta" hidden aria-labelledby="generador-numeros-titulo">
-      <button type="button" class="boton-volver" id="btn-volver-numeros">← Volver</button>
+      <button type="button" class="boton-volver" id="btn-volver-numeros">
+        <span class="flecha-volver" aria-hidden="true">←</span> Volver
+      </button>
       <h2 id="generador-numeros-titulo">Generador de números</h2>
 
       <form id="form-generador-numeros" class="formulario-herramienta">
@@ -85,7 +87,8 @@
 
       <p id="error-generador-numeros" class="mensaje-error" role="alert" hidden></p>
 
-      <div id="resultado-generador-numeros" class="resultado-herramienta" aria-live="polite"></div>
+      <div id="resultado-generador-numeros" class="resultado-herramienta"></div>
+      <p id="anuncio-resultado-numeros" class="visualmente-oculto" aria-live="polite"></p>
     </section>
   </main>
 

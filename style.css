@@ -5,6 +5,7 @@
   /* Paleta base */
   --color-primary: #5b3df5;
   --color-primary-hover: #4930c9;
+  --color-primary-bg: #efe9fd;
   --color-background: #f7f6fb;
   --color-surface: #ffffff;
   --color-text: #1c1d24;
@@ -205,19 +206,25 @@ footer {
 }
 
 .boton-volver {
-  display: inline-block;
-  background: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: var(--color-primary-bg);
   border: none;
-  color: var(--color-text-secondary);
+  color: var(--color-primary);
   font: inherit;
   font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
-  padding: 0.25rem 0;
-  margin-bottom: 1.25rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  margin-bottom: 1.5rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .boton-volver:hover {
-  color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: #ffffff;
 }
 
 .boton-volver:focus {
@@ -227,6 +234,15 @@ footer {
 .boton-volver:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+.flecha-volver {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.boton-volver:hover .flecha-volver {
+  transform: translateX(-3px);
 }
 
 .pantalla-herramienta h2 {
@@ -309,6 +325,11 @@ footer {
   outline-offset: 2px;
 }
 
+.boton-generar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .mensaje-error {
   margin-top: 1rem;
   padding: 0.75rem 1rem;
@@ -322,14 +343,53 @@ footer {
   margin-top: 1.5rem;
   padding: 1.25rem 1rem;
   border-radius: var(--radius-card);
-  text-align: center;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--color-primary);
   min-height: 1.5em;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .resultado-herramienta:not(:empty) {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
+}
+
+/* Cada número generado es su propio "casillero": en modo Revelación aparece
+   directo con el valor final, en modo Ruleta primero titila con .numero-girando
+   y termina con .numero-revelado cuando se frena en el valor definitivo. */
+.numero-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2em;
+  padding: 0.3em 0.6em;
+  border-radius: 8px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background-color: var(--color-background);
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.numero-revelado {
+  background-color: var(--color-numeros-bg);
+  color: var(--color-numeros);
+  transform: scale(1.08);
+}
+
+/* Utilidad estándar para dar información a lectores de pantalla
+   sin mostrar nada en pantalla (el contenido sigue "viéndose" para el navegador,
+   solo se saca visualmente del layout). */
+.visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
