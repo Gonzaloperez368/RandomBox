@@ -29,6 +29,11 @@
   --radius-card: 16px;
   --shadow-card: 0 1px 3px rgba(20, 20, 35, 0.06);
   --shadow-card-hover: 0 10px 24px rgba(20, 20, 35, 0.10);
+
+  /* Color semántico para mensajes de error (independiente del acento de "torneos",
+     aunque el tono sea parecido). */
+  --color-danger: #c94f4f;
+  --color-danger-bg: #fbe8e8;
 }
 
 * {
@@ -120,10 +125,22 @@ section h2 {
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
+/* La tarjeta de "Generador de números" ahora es un <button> real (las otras
+   5 todavía son <li> sin interacción, hasta que cada una tenga su pantalla). */
+button.herramienta {
+  width: 100%;
+  height: 100%;
+  font: inherit;
+}
+
 .herramienta:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-card-hover);
   border-color: var(--color-primary);
+}
+
+.herramienta:focus {
+  outline: none;
 }
 
 .herramienta:focus-visible {
@@ -178,4 +195,141 @@ footer {
   padding: 2rem 1rem 2.5rem;
   color: var(--color-text-secondary);
   font-size: 0.8rem;
+}
+
+/* Pantalla de cada herramienta (por ahora, solo el generador de números). */
+.pantalla-herramienta {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 2rem;
+}
+
+.boton-volver {
+  display: inline-block;
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  margin-bottom: 1.25rem;
+}
+
+.boton-volver:hover {
+  color: var(--color-primary);
+}
+
+.boton-volver:focus {
+  outline: none;
+}
+
+.boton-volver:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.pantalla-herramienta h2 {
+  font-size: 1.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.formulario-herramienta {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.campo label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.campo input[type="number"] {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+}
+
+.campo input[type="number"]:focus {
+  outline: none;
+}
+
+.campo input[type="number"]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  border-color: var(--color-primary);
+}
+
+.campo-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.campo-checkbox label {
+  font-weight: 400;
+  color: var(--color-text);
+}
+
+.boton-generar {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.boton-generar:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.boton-generar:focus {
+  outline: none;
+}
+
+.boton-generar:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.mensaje-error {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.resultado-herramienta {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1rem;
+  border-radius: var(--radius-card);
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  min-height: 1.5em;
+}
+
+.resultado-herramienta:not(:empty) {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
 }

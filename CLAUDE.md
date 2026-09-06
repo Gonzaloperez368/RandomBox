@@ -35,7 +35,7 @@ RandomBox es una caja de herramientas web para elegir al azar, organizar persona
 
 - [x] FASE 1 — Estructura básica
 - [x] FASE 2 — Diseño general
-- [ ] FASE 3 — Generador de números
+- [~] FASE 3 — Generador de números (modo Revelación listo; falta el modo Ruleta)
 - [ ] FASE 4 — Selector de nombres + ruleta
 - [ ] FASE 5 — Generador de grupos
 - [ ] FASE 6 — Lanzamiento de moneda
@@ -86,6 +86,10 @@ Estilo actual: **identidad violeta/azul-violeta sobre neutros claros**, con acen
 - Las tarjetas (`.herramienta`) ahora sí tienen `cursor: pointer`, hover (elevación + sombra + borde) y `:focus-visible` preparado en el CSS — es una señal visual intencional de que van a ser clickeables, aunque la navegación real todavía no está conectada (son `<li>`, no `<a>`/`<button>`, así que no se les agregó `tabindex`: eso se resuelve solo cuando pasen a ser enlaces reales en una fase futura).
 - Grid de la sección "Herramientas": mobile-first con breakpoints explícitos en `min-width: 640px` (2 columnas) y `min-width: 960px` (3 columnas), no `auto-fit`.
 
+## Patrón de navegación entre pantallas
+
+Una sola página (`index.html`), sin router ni módulos: cada herramienta es un `<section class="pantalla-herramienta" hidden>` que arranca oculto. La tarjeta de esa herramienta en `#pantalla-inicio` se convierte en un `<button>` (no un `<a>`, no queda historial/URL propia) que oculta `#pantalla-inicio` + `#nota-construccion` y muestra la pantalla de la herramienta; un botón "← Volver" hace lo inverso. Ver `configurarNavegacionHerramientas()` en `script.js`. Las próximas fases (4 a 8) deberían reutilizar este mismo patrón: convertir la `<li>` de esa herramienta en `<button>`, agregar su `<section hidden>` dentro de `<main>`, y sumar su propio par mostrar/ocultar.
+
 ## Estado actual
 
-FASE 2 completada (estructura y luego revisión de identidad visual). Próximo paso: FASE 3 — Generador de números (no empezar sin que el usuario lo pida).
+FASE 3 en curso: generador de números con modo Revelación (formulario mínimo/máximo/cantidad/repetidos, validación, resultado) funcionando. Falta el modo Ruleta de esta misma herramienta antes de pasar a FASE 4. No avanzar sin que el usuario lo pida.
