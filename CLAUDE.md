@@ -37,7 +37,7 @@ RandomBox es una caja de herramientas web para elegir al azar, organizar persona
 - [x] FASE 2 — Diseño general
 - [x] FASE 3 — Generador de números (modo único: Ruleta)
 - [x] FASE 4 — Selector de nombres + ruleta
-- [~] FASE 5 — Generador de grupos (generación balanceada lista; falta la edición manual)
+- [x] FASE 5 — Generador de grupos
 - [ ] FASE 6 — Lanzamiento de moneda
 - [ ] FASE 7 — Mezclador
 - [ ] FASE 8 — Base de torneos
@@ -122,8 +122,8 @@ Construido:
 - Modo **Ruleta**: rueda SVG de verdad, dibujada por código (`dibujarRuedaDeNombres`), que gira con una transición CSS controlada desde JS (`girarRuedaHasta`) y se frena exactamente en la porción ganadora (ángulo calculado, no aproximado). Si se pide más de un elemento, gira una vez por cada uno; sin repetición, la porción ganadora se saca de la rueda antes del siguiente giro.
 - **Elección de modo**: no es un `<fieldset>` de radio buttons — al entrar a la herramienta aparecen primero dos botones grandes (reusando la clase `.herramienta`, igual que las tarjetas del inicio) para elegir Revelación o Ruleta, y recién después se muestra el formulario con las opciones. El modo elegido se guarda en `formulario.dataset.modo`. Este patrón (elegir modo con botones grandes tipo tarjeta, antes de cargar datos) puede servir de referencia para otras herramientas que necesiten varios modos en el futuro.
 
-FASE 5 en curso: generador de grupos. Reusa la lista dinámica de opciones (ahora generalizada: `configurarListaDeOpciones(idContenedor)` y `obtenerOpcionesValidas(contenedor)` reciben el contenedor en vez de tener el id fijo — así el selector de nombres y el generador de grupos comparten el mismo código sin duplicarlo). Reparto balanceado en `calcularTamanosDeGrupos` (la diferencia entre el grupo más grande y el más chico nunca supera 1) y `mezclarLista` (Fisher-Yates genérico, pensado para reusarse también en el Mezclador de FASE 7). Elección de modo con el mismo patrón de botones grandes que en FASE 4 ("por cantidad de grupos" vs. "por personas por grupo") — el usuario lo pidió así de entrada esta vez, no hubo que preguntar dos veces.
+FASE 5 completada: generador de grupos. Reusa la lista dinámica de opciones (ahora generalizada: `configurarListaDeOpciones(idContenedor)` y `obtenerOpcionesValidas(contenedor)` reciben el contenedor en vez de tener el id fijo — así el selector de nombres y el generador de grupos comparten el mismo código sin duplicarlo). Reparto balanceado en `calcularTamanosDeGrupos` (la diferencia entre el grupo más grande y el más chico nunca supera 1) y `mezclarLista` (Fisher-Yates genérico, pensado para reusarse también en el Mezclador de FASE 7). Elección de modo con el mismo patrón de botones grandes que en FASE 4 ("por cantidad de grupos" vs. "por personas por grupo").
 
-Falta: la edición manual de grupos (mover una persona de un grupo a otro después de generar, sección 13 del spec original) — pendiente para un próximo paso, no construir sin que el usuario lo pida.
+**Edición manual de grupos**: cada persona tiene un `<select>` ("mover a: Grupo N") en vez de drag-and-drop — mucho más simple de implementar bien y funciona igual de bien en celular. El estado real de los grupos vive en `gruposActuales` (variable dentro de `configurarGeneradorDeGrupos`, no solo en el HTML): mover a alguien es `splice` en el grupo de origen + `push` en el destino, y se vuelve a dibujar todo con `mostrarGrupos`. Un grupo puede quedar vacío después de mover gente — es un resultado válido, se muestra como tarjeta con el texto "Vacío".
 
-Próximo paso: terminar FASE 5 con la edición manual, o seguir con FASE 6 si el usuario prefiere dejar la edición para más adelante (no asumir, preguntar).
+Próximo paso: FASE 6 — Lanzamiento de moneda (no avanzar sin que el usuario lo pida).

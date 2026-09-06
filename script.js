@@ -714,21 +714,55 @@ function validarDatosDeGrupos(participantes, numero, modo) {
   return null;
 }
 
-function mostrarGrupos(grupos, elementoResultado) {
+// Dibuja las tarjetas de grupos. Cada persona tiene un <select> para
+// moverla a otro grupo — al elegir uno distinto, se llama a alMoverPersona
+// con el grupo de origen, la posición de la persona ahí, y el grupo destino.
+function mostrarGrupos(grupos, elementoResultado, alMoverPersona) {
   elementoResultado.innerHTML = "";
 
-  grupos.forEach((grupo, indice) => {
+  grupos.forEach((grupo, indiceGrupo) => {
     const tarjeta = document.createElement("div");
     tarjeta.className = "grupo-tarjeta";
 
     const titulo = document.createElement("h3");
-    titulo.textContent = `Grupo ${indice + 1}`;
+    titulo.textContent = `Grupo ${indiceGrupo + 1}`;
     tarjeta.appendChild(titulo);
 
+    if (grupo.length === 0) {
+      const vacio = document.createElement("p");
+      vacio.className = "grupo-vacio";
+      vacio.textContent = "Vacío";
+      tarjeta.appendChild(vacio);
+      elementoResultado.appendChild(tarjeta);
+      return;
+    }
+
     const lista = document.createElement("ul");
-    grupo.forEach((persona) => {
+    grupo.forEach((persona, indicePersona) => {
       const item = document.createElement("li");
-      item.textContent = persona;
+
+      const nombre = document.createElement("span");
+      nombre.className = "persona-nombre";
+      nombre.textContent = persona;
+      item.appendChild(nombre);
+
+      const selector = document.createElement("select");
+      selector.className = "persona-mover";
+      selector.setAttribute("aria-label", `Mover a ${persona} a otro grupo`);
+
+      grupos.forEach((_, indiceOpcion) => {
+        const opcion = document.createElement("option");
+        opcion.value = indiceOpcion;
+        opcion.textContent = `Grupo ${indiceOpcion + 1}`;
+        opcion.selected = indiceOpcion === indiceGrupo;
+        selector.appendChild(opcion);
+      });
+
+      selector.addEventListener("change", () => {
+        alMoverPersona(indiceGrupo, indicePersona, Number(selector.value));
+      });
+
+      item.appendChild(selector);
       lista.appendChild(item);
     });
     tarjeta.appendChild(lista);
@@ -746,8 +780,24 @@ function configurarGeneradorDeGrupos() {
   const botonVolver = document.getElementById("btn-volver-grupos");
   const elementoError = document.getElementById("error-generador-grupos");
   const elementoResultado = document.getElementById("resultado-generador-grupos");
+  const elementoAnuncio = document.getElementById("anuncio-generador-grupos");
   const etiquetaNumero = document.getElementById("grupos-numero-etiqueta");
   const contenedorParticipantes = document.getElementById("contenedor-participantes");
+
+  // Los grupos generados quedan guardados acá (no solo en el HTML) para poder
+  // editarlos: mover a alguien es sacarlo de un grupo y agregarlo a otro en
+  // este array, y volver a dibujar todo.
+  let gruposActuales = [];
+
+  function moverPersona(indiceGrupoOrigen, indicePersona, indiceGrupoDestino) {
+    if (indiceGrupoOrigen !== indiceGrupoDestino) {
+      const persona = gruposActuales[indiceGrupoOrigen][indicePersona];
+      gruposActuales[indiceGrupoOrigen].splice(indicePersona, 1);
+      gruposActuales[indiceGrupoDestino].push(persona);
+      elementoAnuncio.textContent = `${persona} se movió al Grupo ${indiceGrupoDestino + 1}.`;
+    }
+    mostrarGrupos(gruposActuales, elementoResultado, moverPersona);
+  }
 
   configurarBotonVolverDeResultado("btn-volver-resultado-grupos", formulario, overlay);
 
@@ -800,8 +850,9 @@ function configurarGeneradorDeGrupos() {
       ? numero
       : Math.ceil(participantes.length / numero);
 
-    const grupos = crearGrupos(participantes, cantidadDeGrupos);
-    mostrarGrupos(grupos, elementoResultado);
+    gruposActuales = crearGrupos(participantes, cantidadDeGrupos);
+    mostrarGrupos(gruposActuales, elementoResultado, moverPersona);
+    elementoAnuncio.textContent = `Se generaron ${gruposActuales.length} grupos.`;
     mostrarOverlayDeResultado(formulario, overlay);
   });
 }
