@@ -299,6 +299,42 @@ footer {
   color: var(--color-text);
 }
 
+.campo input[type="text"] {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+}
+
+.campo input[type="text"]:focus {
+  outline: none;
+}
+
+.campo input[type="text"]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  border-color: var(--color-primary);
+}
+
+/* flex-wrap + justify-content:center logran solos el patrón "1 centrada,
+   2 lado a lado, 3 = 2 arriba y 1 centrada abajo, y así": cada campo pide
+   la mitad del ancho, y cuando sobra uno solo en la última fila, el propio
+   centrado del contenedor lo deja en el medio sin código extra. */
+.contenedor-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.9rem;
+}
+
+.campo-opcion {
+  flex: 0 1 calc(50% - 0.45rem);
+  min-width: 140px;
+}
+
 .boton-generar {
   background-color: var(--color-primary);
   color: #ffffff;
@@ -356,10 +392,10 @@ footer {
   border: 1px solid var(--color-border);
 }
 
-/* Cada número generado es su propio "casillero": en modo Revelación aparece
-   directo con el valor final, en modo Ruleta primero titila con .numero-girando
-   y termina con .numero-revelado cuando se frena en el valor definitivo. */
-.numero-slot {
+/* Cada elemento del resultado (un número, un nombre elegido, etc.) es su propio
+   "casillero": aparece con .resultado-slot y, cuando termina de animarse/revelarse,
+   suma .resultado-revelado para destacarse. Compartido entre herramientas. */
+.resultado-slot {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -373,10 +409,21 @@ footer {
   transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
 }
 
-.numero-revelado {
-  background-color: var(--color-numeros-bg);
-  color: var(--color-numeros);
+.resultado-slot.resultado-revelado {
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
   transform: scale(1.08);
+}
+
+/* Estado de "suspenso" mientras se espera el redoble antes de revelar. */
+@keyframes latido-suspenso {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.resultado-slot.resultado-suspenso {
+  color: var(--color-text-secondary);
+  animation: latido-suspenso 0.5s ease-in-out infinite;
 }
 
 /* Utilidad estándar para dar información a lectores de pantalla

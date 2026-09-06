@@ -36,7 +36,7 @@ RandomBox es una caja de herramientas web para elegir al azar, organizar persona
 - [x] FASE 1 — Estructura básica
 - [x] FASE 2 — Diseño general
 - [x] FASE 3 — Generador de números (modo único: Ruleta)
-- [ ] FASE 4 — Selector de nombres + ruleta
+- [~] FASE 4 — Selector de nombres + ruleta (lista dinámica + Revelación con suspenso listos; falta la ruleta visual)
 - [ ] FASE 5 — Generador de grupos
 - [ ] FASE 6 — Lanzamiento de moneda
 - [ ] FASE 7 — Mezclador
@@ -90,6 +90,18 @@ Estilo actual: **identidad violeta/azul-violeta sobre neutros claros**, con acen
 
 Una sola página (`index.html`), sin router ni módulos: cada herramienta es un `<section class="pantalla-herramienta" hidden>` que arranca oculto. La tarjeta de esa herramienta en `#pantalla-inicio` se convierte en un `<button>` (no un `<a>`, no queda historial/URL propia) que oculta `#pantalla-inicio` + `#nota-construccion` y muestra la pantalla de la herramienta; un botón "← Volver" hace lo inverso. Ver `configurarNavegacionHerramientas()` en `script.js`. Las próximas fases (4 a 8) deberían reutilizar este mismo patrón: convertir la `<li>` de esa herramienta en `<button>`, agregar su `<section hidden>` dentro de `<main>`, y sumar su propio par mostrar/ocultar.
 
+## Resultado de herramientas: casillero compartido
+
+`crearCasillero()` en `script.js` crea el `<span class="resultado-slot">` que usa cualquier herramienta para mostrar un elemento del resultado (número, nombre elegido, etc.). `.resultado-revelado` lo destaca al terminar, `.resultado-suspenso` lo hace "latir" mientras se espera (ver `mostrarConSuspenso`). No crear casilleros específicos por herramienta — reusar este.
+
 ## Estado actual
 
-FASE 3 completada: generador de números con validación, siempre en modo Ruleta (animación con `setInterval`/`setTimeout` sobre casilleros `.numero-slot`). Se probó primero con un selector Revelación/Ruleta, pero el usuario prefirió sacarlo: no quiere elegir un modo cada vez que genera, prefiere una única forma fija de mostrar el resultado. **Importante para FASE 4** (selector de nombres, que el spec original también plantea con modo Revelación/Ruleta): volver a preguntar antes de asumir que va un selector de modo — puede que el usuario prefiera, de nuevo, una sola forma fija. El anuncio para lectores de pantalla vive en un elemento aparte (`#anuncio-resultado-numeros`, oculto visualmente) que se actualiza una sola vez al final, no en cada tick de la animación. Próximo paso: FASE 4 — Selector de nombres + ruleta (no avanzar sin que el usuario lo pida).
+FASE 3 completada: generador de números con validación, siempre en modo Ruleta. Se probó primero con un selector Revelación/Ruleta, pero el usuario prefirió sacarlo: no quiere elegir un modo cada vez que genera, prefiere una única forma fija de mostrar el resultado.
+
+FASE 4 en curso: para el selector de nombres/palabras, el usuario SÍ quiere elegir entre Revelación y Ruleta cada vez (a diferencia de números) — no asumir que la preferencia de FASE 3 aplica a todas las herramientas, se pregunta de nuevo en cada fase.
+
+Ya construido: lista dinámica de opciones (`configurarListaDeOpciones` — aparece "Opción 2" automáticamente al completar "Opción 1" con algo que tenga al menos una letra, vía delegación de eventos), validación (`validarDatosSelector`), selección con/sin repetición (`elegirElementos`), y el modo **Revelación**: ahora significa "~3 segundos de suspenso con un redoble de tambores sintetizado (Web Audio API, sin archivos externos) y después se revela el resultado" — no la revelación instantánea que tenía el generador de números antes de sacarla.
+
+Falta: el modo **Ruleta** de esta herramienta debe ser una rueda visual de verdad (gira y una flecha señala el resultado, no solo texto que titila) — pendiente para el próximo paso. Recién cuando esté lista se agrega el selector Revelación/Ruleta al formulario (por ahora el formulario solo tiene el modo Revelación, sin selector, para no mostrar una opción que todavía no funciona).
+
+Próximo paso: terminar FASE 4 con la ruleta visual (no avanzar a FASE 5 sin que el usuario lo pida).
