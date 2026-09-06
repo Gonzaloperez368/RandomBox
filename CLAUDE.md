@@ -76,6 +76,15 @@ No construir varias fases a la vez, aunque el siguiente paso parezca obvio.
 
 Para cada herramienta, cuando tenga lógica, probar: caso normal, caso límite, caso inválido, caso vacío y reglas de repetición (si aplica).
 
+## Sistema de diseño (definido en FASE 2)
+
+Estilo elegido: **claro y colorido, juguetón**. Reutilizar estas variables de `style.css` en vez de inventar colores nuevos:
+
+- `--color-fondo`, `--color-superficie`, `--color-texto`, `--color-texto-suave`, `--color-marca`: paleta base neutra/clara.
+- Un color de acento por herramienta (`--color-numeros`, `--color-nombres`, `--color-grupos`, `--color-moneda`, `--color-mezclador`, `--color-torneos`): se usan como `border-top` de la tarjeta de cada herramienta en `.herramienta--*`, nunca como único indicador (siempre acompañados de un ícono/emoji y texto).
+- Cada herramienta tiene un emoji como ícono decorativo (`aria-hidden="true"`) para no depender de una librería de íconos externa.
+- Las tarjetas de herramientas (`.herramienta`) todavía no son clickeables (no hay `<a>` ni `<button>`): a propósito no tienen `cursor: pointer` ni efecto hover, para no sugerir una funcionalidad que todavía no existe. Eso cambia recién cuando en una fase futura se conecten a su propia pantalla.
+
 ## Estado actual
 
-FASE 1 completada: estructura básica de archivos creada (`index.html`, `style.css`, `script.js`, `README.md`, `.gitignore`) y repo Git inicializado. Próximo paso: FASE 2 — diseño general (no empezar sin que el usuario lo pida).
+FASE 2 completada: sistema de diseño general (paleta clara y colorida, tipografía, grilla de tarjetas responsive para las 6 herramientas). Próximo paso: FASE 3 — Generador de números (no empezar sin que el usuario lo pida).

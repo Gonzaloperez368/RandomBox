@@ -1,11 +1,24 @@
-/* FASE 1: solo lo necesario para que la página no se vea rota.
-   El sistema de diseño completo (colores, tipografía, layout) llega en FASE 2. */
+/* FASE 2: sistema de diseño general.
+   Estilo elegido: claro y colorido — cada herramienta tiene su propio color de acento. */
 
 :root {
-  --color-fondo: #14161a;
-  --color-texto: #f2f2f2;
-  --color-primario: #7c5cff;
-  --color-acento: #00d4b4;
+  /* Colores base */
+  --color-fondo: #fbf9f6;
+  --color-superficie: #ffffff;
+  --color-texto: #22252b;
+  --color-texto-suave: #62697a;
+  --color-marca: #6c4cff;
+
+  /* Un color de acento por herramienta */
+  --color-numeros: #2563eb;
+  --color-nombres: #9333ea;
+  --color-grupos: #16a34a;
+  --color-moneda: #ca8a04;
+  --color-mezclador: #ea580c;
+  --color-torneos: #dc2626;
+
+  --radio-borde: 14px;
+  --sombra-tarjeta: 0 2px 10px rgba(20, 20, 30, 0.08);
 }
 
 * {
@@ -26,42 +39,84 @@ body {
 }
 
 header {
-  padding: 2rem 1rem;
   text-align: center;
+  padding: 3rem 1rem 2rem;
 }
 
 header h1 {
-  color: var(--color-primario);
-  font-size: 2rem;
+  color: var(--color-marca);
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 800;
+}
+
+header p {
+  color: var(--color-texto-suave);
+  font-size: 1.05rem;
+  margin-top: 0.5rem;
 }
 
 section {
-  max-width: 500px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1rem 1.5rem;
 }
 
-section ul {
+section h2 {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+}
+
+/* Grilla de tarjetas: se reacomoda sola según el ancho disponible,
+   así funciona igual de bien en celular, tablet y PC sin escribir
+   media queries para cada tamaño. */
+.lista-herramientas {
   list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
 }
 
-section li {
-  padding: 0.5rem 1rem;
-  margin-bottom: 0.5rem;
-  background-color: rgba(124, 92, 255, 0.15);
-  border-left: 3px solid var(--color-acento);
+.herramienta {
+  background-color: var(--color-superficie);
+  border-radius: var(--radio-borde);
+  border-top: 5px solid transparent;
+  box-shadow: var(--sombra-tarjeta);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
 }
+
+.herramienta-icono {
+  font-size: 2rem;
+}
+
+.herramienta-nombre {
+  font-weight: 600;
+}
+
+/* Cada herramienta con su propio color, además del ícono
+   (así la diferencia no depende solo del color). */
+.herramienta--numeros { border-top-color: var(--color-numeros); }
+.herramienta--nombres { border-top-color: var(--color-nombres); }
+.herramienta--grupos { border-top-color: var(--color-grupos); }
+.herramienta--moneda { border-top-color: var(--color-moneda); }
+.herramienta--mezclador { border-top-color: var(--color-mezclador); }
+.herramienta--torneos { border-top-color: var(--color-torneos); }
 
 main {
   max-width: 500px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 2rem 1.5rem;
   text-align: center;
+  color: var(--color-texto-suave);
 }
 
 footer {
   text-align: center;
-  padding: 1.5rem 1rem;
-  color: rgba(242, 242, 242, 0.6);
+  padding: 2rem 1rem;
+  color: var(--color-texto-suave);
   font-size: 0.9rem;
 }
