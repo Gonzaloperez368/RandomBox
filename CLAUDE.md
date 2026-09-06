@@ -36,7 +36,7 @@ RandomBox es una caja de herramientas web para elegir al azar, organizar persona
 - [x] FASE 1 — Estructura básica
 - [x] FASE 2 — Diseño general
 - [x] FASE 3 — Generador de números (modo único: Ruleta)
-- [~] FASE 4 — Selector de nombres + ruleta (lista dinámica + Revelación con suspenso listos; falta la ruleta visual)
+- [x] FASE 4 — Selector de nombres + ruleta
 - [ ] FASE 5 — Generador de grupos
 - [ ] FASE 6 — Lanzamiento de moneda
 - [ ] FASE 7 — Mezclador
@@ -98,10 +98,12 @@ Una sola página (`index.html`), sin router ni módulos: cada herramienta es un 
 
 FASE 3 completada: generador de números con validación, siempre en modo Ruleta. Se probó primero con un selector Revelación/Ruleta, pero el usuario prefirió sacarlo: no quiere elegir un modo cada vez que genera, prefiere una única forma fija de mostrar el resultado.
 
-FASE 4 en curso: para el selector de nombres/palabras, el usuario SÍ quiere elegir entre Revelación y Ruleta cada vez (a diferencia de números) — no asumir que la preferencia de FASE 3 aplica a todas las herramientas, se pregunta de nuevo en cada fase.
+FASE 4 completada: para el selector de nombres/palabras, el usuario SÍ quiere elegir entre Revelación y Ruleta cada vez (a diferencia de números) — no asumir que la preferencia de FASE 3 aplica a todas las herramientas, se pregunta de nuevo en cada fase.
 
-Ya construido: lista dinámica de opciones (`configurarListaDeOpciones` — aparece "Opción 2" automáticamente al completar "Opción 1" con algo que tenga al menos una letra, vía delegación de eventos), validación (`validarDatosSelector`), selección con/sin repetición (`elegirElementos`), y el modo **Revelación**: ahora significa "~3 segundos de suspenso con un redoble de tambores sintetizado (Web Audio API, sin archivos externos) y después se revela el resultado" — no la revelación instantánea que tenía el generador de números antes de sacarla.
+Construido:
+- Lista dinámica de opciones (`configurarListaDeOpciones`/`sincronizarListaDeOpciones` en `script.js`): "Opción N+1" aparece sola al completar "Opción N" con algo que tenga al menos una letra; si se borra una opción del medio, el contenido de las siguientes sube un lugar (no se borran todas, se corren). Layout con flexbox centrado (`.contenedor-opciones`) que acomoda 1 opción centrada, 2 lado a lado, 3 como 2+1, etc., solo.
+- Modo **Revelación**: ahora significa "~3 segundos de suspenso con un redoble de tambores sintetizado (Web Audio API, sin archivos externos) y después se revela el resultado" — no la revelación instantánea que tenía el generador de números antes de sacarla. El sonido es un prototipo: el usuario planea revisar los efectos de sonido de todo el proyecto más adelante, no tocar esto sin que lo pida.
+- Modo **Ruleta**: rueda SVG de verdad, dibujada por código (`dibujarRuedaDeNombres`), que gira con una transición CSS controlada desde JS (`girarRuedaHasta`) y se frena exactamente en la porción ganadora (ángulo calculado, no aproximado). Si se pide más de un elemento, gira una vez por cada uno; sin repetición, la porción ganadora se saca de la rueda antes del siguiente giro.
+- **Elección de modo**: no es un `<fieldset>` de radio buttons — al entrar a la herramienta aparecen primero dos botones grandes (reusando la clase `.herramienta`, igual que las tarjetas del inicio) para elegir Revelación o Ruleta, y recién después se muestra el formulario con las opciones. El modo elegido se guarda en `formulario.dataset.modo`. Este patrón (elegir modo con botones grandes tipo tarjeta, antes de cargar datos) puede servir de referencia para otras herramientas que necesiten varios modos en el futuro.
 
-Falta: el modo **Ruleta** de esta herramienta debe ser una rueda visual de verdad (gira y una flecha señala el resultado, no solo texto que titila) — pendiente para el próximo paso. Recién cuando esté lista se agrega el selector Revelación/Ruleta al formulario (por ahora el formulario solo tiene el modo Revelación, sin selector, para no mostrar una opción que todavía no funciona).
-
-Próximo paso: terminar FASE 4 con la ruleta visual (no avanzar a FASE 5 sin que el usuario lo pida).
+Próximo paso: FASE 5 — Generador de grupos (no avanzar sin que el usuario lo pida).

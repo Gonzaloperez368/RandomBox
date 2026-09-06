@@ -47,6 +47,14 @@ img {
   max-width: 100%;
 }
 
+/* El atributo hidden de HTML debería ganarle a cualquier "display" que le
+   pongamos a un elemento en otra regla de CSS. Sin esto, una clase como
+   .formulario-herramienta (display: flex) puede terminar mostrando un
+   elemento que JavaScript marcó como hidden. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-text);
@@ -323,6 +331,29 @@ footer {
    2 lado a lado, 3 = 2 arriba y 1 centrada abajo, y así": cada campo pide
    la mitad del ancho, y cuando sobra uno solo en la última fila, el propio
    centrado del contenedor lo deja en el medio sin código extra. */
+.eleccion-modo {
+  text-align: center;
+}
+
+.eleccion-modo-titulo {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+}
+
+.eleccion-modo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 420px) {
+  .eleccion-modo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .contenedor-opciones {
   display: flex;
   flex-wrap: wrap;
@@ -424,6 +455,47 @@ footer {
 .resultado-slot.resultado-suspenso {
   color: var(--color-text-secondary);
   animation: latido-suspenso 0.5s ease-in-out infinite;
+}
+
+/* Ruleta visual: la flecha queda fija arriba, y lo único que gira es el <svg>
+   (rotamos ese elemento con CSS transform/transition desde JavaScript). */
+.ruleta-contenedor {
+  position: relative;
+  width: min(280px, 100%);
+  margin: 1.5rem auto 0;
+}
+
+.ruleta-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  transform-origin: 50% 50%;
+  filter: drop-shadow(0 4px 10px rgba(20, 20, 35, 0.15));
+}
+
+.ruleta-segmento {
+  stroke: var(--color-surface);
+  stroke-width: 2;
+}
+
+.ruleta-etiqueta {
+  fill: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.ruleta-flecha {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 20px solid var(--color-text);
+  z-index: 1;
 }
 
 /* Utilidad estándar para dar información a lectores de pantalla

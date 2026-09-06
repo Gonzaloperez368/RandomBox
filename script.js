@@ -382,14 +382,199 @@ function mostrarConSuspenso(elegidos, elementoResultado, elementoAnuncio, alTerm
   }, duracionMs);
 }
 
+// --- Ruleta visual (selector de nombres/palabras) ---
+// Se dibuja con SVG generado por código: nada de imágenes ni librerías.
+
+const coloresDeRuleta = ["#5b3df5", "#3b6fd6", "#2f9e6e", "#c08a1f", "#d97a3f", "#c94f4f", "#7c4fd8"];
+const ESPACIO_SVG = "http://www.w3.org/2000/svg";
+
+// Un punto sobre un círculo, dado un ángulo en grados. Restamos 90° para que
+// el ángulo 0 apunte "hacia arriba" (donde está la flecha) en vez de "a la derecha",
+// que es la convención matemática habitual.
+function coordenadaEnCirculo(centro, radio, anguloGrados) {
+  const anguloRad = ((anguloGrados - 90) * Math.PI) / 180;
+  return {
+    x: centro + radio * Math.cos(anguloRad),
+    y: centro + radio * Math.sin(anguloRad),
+  };
+}
+
+// El "path" SVG de una porción de torta, del ángulo de inicio al de fin.
+function crearPathDeSegmento(centro, radio, anguloInicio, anguloFin) {
+  const inicio = coordenadaEnCirculo(centro, radio, anguloInicio);
+  const fin = coordenadaEnCirculo(centro, radio, anguloFin);
+  const esArcoGrande = anguloFin - anguloInicio > 180 ? 1 : 0;
+  return `M ${centro} ${centro} L ${inicio.x} ${inicio.y} A ${radio} ${radio} 0 ${esArcoGrande} 1 ${fin.x} ${fin.y} Z`;
+}
+
+function acortarTexto(texto) {
+  const maximo = 12;
+  return texto.length > maximo ? `${texto.slice(0, maximo - 1)}…` : texto;
+}
+
+// Redibuja la rueda completa según la lista de opciones actual (se llama de
+// nuevo entre giros si "sin repetición" saca una opción del medio).
+function dibujarRuedaDeNombres(contenedorRuleta, opciones) {
+  const svg = contenedorRuleta.querySelector(".ruleta-svg");
+  svg.innerHTML = "";
+  svg.style.transition = "none";
+  svg.style.transform = "rotate(0deg)";
+
+  const centro = 150;
+  const radio = 145;
+
+  // Un segmento de 360° no se puede dibujar como arco SVG: el punto de inicio
+  // y el de fin coinciden, y el navegador lo trata como "nada que dibujar".
+  // Cuando queda una sola opción (último giro sin repetición), dibujamos
+  // directamente un círculo completo en vez de un arco.
+  if (opciones.length === 1) {
+    const circulo = document.createElementNS(ESPACIO_SVG, "circle");
+    circulo.setAttribute("cx", centro);
+    circulo.setAttribute("cy", centro);
+    circulo.setAttribute("r", radio);
+    circulo.setAttribute("fill", coloresDeRuleta[0]);
+    circulo.setAttribute("class", "ruleta-segmento");
+    svg.appendChild(circulo);
+
+    const etiqueta = document.createElementNS(ESPACIO_SVG, "text");
+    etiqueta.setAttribute("x", centro);
+    etiqueta.setAttribute("y", centro);
+    etiqueta.setAttribute("text-anchor", "middle");
+    etiqueta.setAttribute("dominant-baseline", "middle");
+    etiqueta.setAttribute("class", "ruleta-etiqueta");
+    etiqueta.textContent = acortarTexto(opciones[0]);
+    svg.appendChild(etiqueta);
+    return;
+  }
+
+  const anguloPorSegmento = 360 / opciones.length;
+
+  opciones.forEach((texto, indice) => {
+    const anguloInicio = indice * anguloPorSegmento;
+    const anguloFin = anguloInicio + anguloPorSegmento;
+
+    const segmento = document.createElementNS(ESPACIO_SVG, "path");
+    segmento.setAttribute("d", crearPathDeSegmento(centro, radio, anguloInicio, anguloFin));
+    segmento.setAttribute("fill", coloresDeRuleta[indice % coloresDeRuleta.length]);
+    segmento.setAttribute("class", "ruleta-segmento");
+    svg.appendChild(segmento);
+
+    const puntoEtiqueta = coordenadaEnCirculo(centro, radio * 0.62, anguloInicio + anguloPorSegmento / 2);
+    const etiqueta = document.createElementNS(ESPACIO_SVG, "text");
+    etiqueta.setAttribute("x", puntoEtiqueta.x);
+    etiqueta.setAttribute("y", puntoEtiqueta.y);
+    etiqueta.setAttribute("text-anchor", "middle");
+    etiqueta.setAttribute("dominant-baseline", "middle");
+    etiqueta.setAttribute("transform", `rotate(${anguloInicio + anguloPorSegmento / 2}, ${puntoEtiqueta.x}, ${puntoEtiqueta.y})`);
+    etiqueta.setAttribute("class", "ruleta-etiqueta");
+    etiqueta.textContent = acortarTexto(texto);
+    svg.appendChild(etiqueta);
+  });
+}
+
+// Gira la rueda hasta frenarse exactamente en el ángulo indicado.
+// El "reset" a 0° sin transición, seguido de requestAnimationFrame, es la forma
+// estándar de reiniciar una animación CSS que ya se había usado antes.
+function girarRuedaHasta(svg, anguloFinal, duracionSeg, alTerminar) {
+  svg.style.transition = "none";
+  svg.style.transform = "rotate(0deg)";
+  svg.getBoundingClientRect(); // fuerza al navegador a aplicar el reset ya mismo
+
+  requestAnimationFrame(() => {
+    svg.style.transition = `transform ${duracionSeg}s cubic-bezier(0.12, 0.85, 0.28, 1)`;
+    svg.style.transform = `rotate(${anguloFinal}deg)`;
+  });
+
+  svg.addEventListener("transitionend", alTerminar, { once: true });
+}
+
+// Hace tantos giros como "cantidad" se haya pedido. Cada giro elige un índice
+// al azar de las opciones todavía disponibles (misma idea que elegirElementosSinRepetir,
+// pero de a un elemento por vez, para poder animarlo). Si no se permiten repetidos,
+// la opción ganadora se saca de la rueda antes del siguiente giro.
+function realizarRuletaDeNombres(opciones, cantidad, permitirRepetidos, contenedorRuleta, elementoResultado, elementoAnuncio, alTerminar) {
+  const disponibles = [...opciones];
+  const elegidos = [];
+  const svg = contenedorRuleta.querySelector(".ruleta-svg");
+
+  dibujarRuedaDeNombres(contenedorRuleta, disponibles);
+
+  function girarSiguiente() {
+    const anguloPorSegmento = 360 / disponibles.length;
+    const indiceGanador = Math.floor(Math.random() * disponibles.length);
+    const centroGanador = indiceGanador * anguloPorSegmento + anguloPorSegmento / 2;
+    const vueltasCompletas = 5;
+    const anguloFinal = vueltasCompletas * 360 + ((360 - centroGanador) % 360);
+
+    girarRuedaHasta(svg, anguloFinal, 3, () => {
+      const ganador = disponibles[indiceGanador];
+      elegidos.push(ganador);
+
+      const casillero = crearCasillero(ganador);
+      casillero.classList.add("resultado-revelado");
+      elementoResultado.appendChild(casillero);
+
+      if (!permitirRepetidos) {
+        disponibles.splice(indiceGanador, 1);
+      }
+
+      if (elegidos.length < cantidad) {
+        if (!permitirRepetidos) {
+          dibujarRuedaDeNombres(contenedorRuleta, disponibles);
+        }
+        setTimeout(girarSiguiente, 500);
+      } else {
+        elementoAnuncio.textContent = `Resultado: ${elegidos.join(", ")}`;
+        alTerminar();
+      }
+    });
+  }
+
+  girarSiguiente();
+}
+
 function configurarSelectorDeNombres() {
   configurarListaDeOpciones();
 
   const formulario = document.getElementById("form-selector-nombres");
+  const seccionEleccionModo = document.getElementById("selector-eleccion-modo");
+  const botonVolverSelector = document.getElementById("btn-volver-selector");
   const botonElegir = formulario.querySelector(".boton-generar");
   const elementoError = document.getElementById("error-selector-nombres");
   const elementoResultado = document.getElementById("resultado-selector-nombres");
   const elementoAnuncio = document.getElementById("anuncio-resultado-selector");
+  const contenedorRuleta = document.getElementById("ruleta-nombres");
+
+  // El modo elegido se guarda en el propio <form> (data-modo), así no hace
+  // falta ningún radio button: el formulario "recuerda" con qué modo trabajar.
+  // "Volver" (al inicio) solo se ve en la elección de modo; con el formulario
+  // abierto, la única salida es "Cambiar modo" — para llegar al inicio hay
+  // que pasar por ahí primero.
+  function mostrarEleccionDeModo() {
+    formulario.hidden = true;
+    elementoError.hidden = true;
+    contenedorRuleta.hidden = true;
+    elementoResultado.innerHTML = "";
+    seccionEleccionModo.hidden = false;
+    botonVolverSelector.hidden = false;
+  }
+
+  function elegirModo(modo) {
+    formulario.dataset.modo = modo;
+    seccionEleccionModo.hidden = true;
+    formulario.hidden = false;
+    botonVolverSelector.hidden = true;
+  }
+
+  seccionEleccionModo.querySelectorAll(".herramienta").forEach((boton) => {
+    boton.addEventListener("click", () => elegirModo(boton.dataset.modo));
+  });
+
+  document.getElementById("btn-cambiar-modo").addEventListener("click", mostrarEleccionDeModo);
+
+  // Cada vez que se entra a esta herramienta desde el inicio, arrancamos
+  // siempre por la elección de modo (no se recuerda la vez anterior).
+  document.getElementById("btn-selector-nombres").addEventListener("click", mostrarEleccionDeModo);
 
   formulario.addEventListener("submit", (evento) => {
     evento.preventDefault();
@@ -397,6 +582,7 @@ function configurarSelectorDeNombres() {
     const opciones = obtenerOpcionesValidas();
     const cantidad = Number(document.getElementById("selector-cantidad").value);
     const permitirRepetidos = document.getElementById("selector-repetidos").checked;
+    const modoElegido = formulario.dataset.modo;
 
     const mensajeError = validarDatosSelector(opciones, cantidad, permitirRepetidos);
 
@@ -404,15 +590,25 @@ function configurarSelectorDeNombres() {
       elementoError.textContent = mensajeError;
       elementoError.hidden = false;
       elementoResultado.innerHTML = "";
+      contenedorRuleta.hidden = true;
       return;
     }
 
     elementoError.hidden = true;
-    const elegidos = elegirElementos(opciones, cantidad, permitirRepetidos);
-
+    elementoResultado.innerHTML = "";
     botonElegir.disabled = true;
-    mostrarConSuspenso(elegidos, elementoResultado, elementoAnuncio, () => {
-      botonElegir.disabled = false;
-    });
+
+    if (modoElegido === "ruleta") {
+      contenedorRuleta.hidden = false;
+      realizarRuletaDeNombres(opciones, cantidad, permitirRepetidos, contenedorRuleta, elementoResultado, elementoAnuncio, () => {
+        botonElegir.disabled = false;
+      });
+    } else {
+      contenedorRuleta.hidden = true;
+      const elegidos = elegirElementos(opciones, cantidad, permitirRepetidos);
+      mostrarConSuspenso(elegidos, elementoResultado, elementoAnuncio, () => {
+        botonElegir.disabled = false;
+      });
+    }
   });
 }

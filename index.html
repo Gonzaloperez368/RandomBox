@@ -99,7 +99,27 @@
       </button>
       <h2 id="selector-nombres-titulo">Selector de nombres/palabras</h2>
 
-      <form id="form-selector-nombres" class="formulario-herramienta">
+      <div id="selector-eleccion-modo" class="eleccion-modo">
+        <p class="eleccion-modo-titulo">¿Cómo querés ver el resultado?</p>
+        <div class="eleccion-modo-grid">
+          <button type="button" class="herramienta" data-modo="revelacion">
+            <span class="herramienta-icono" aria-hidden="true">🎭</span>
+            <h3 class="herramienta-nombre">Revelación</h3>
+            <p class="herramienta-descripcion">Suspenso y redoble antes de mostrar el resultado.</p>
+          </button>
+          <button type="button" class="herramienta" data-modo="ruleta">
+            <span class="herramienta-icono" aria-hidden="true">🎡</span>
+            <h3 class="herramienta-nombre">Ruleta</h3>
+            <p class="herramienta-descripcion">Una rueda gira y señala el resultado.</p>
+          </button>
+        </div>
+      </div>
+
+      <form id="form-selector-nombres" class="formulario-herramienta" hidden>
+        <button type="button" class="boton-volver" id="btn-cambiar-modo">
+          <span class="flecha-volver" aria-hidden="true">←</span> Cambiar modo
+        </button>
+
         <div class="contenedor-opciones" id="contenedor-opciones">
           <div class="campo campo-opcion">
             <label for="opcion-1">Opción 1</label>
@@ -121,6 +141,11 @@
       </form>
 
       <p id="error-selector-nombres" class="mensaje-error" role="alert" hidden></p>
+
+      <div id="ruleta-nombres" class="ruleta-contenedor" hidden aria-hidden="true">
+        <div class="ruleta-flecha"></div>
+        <svg class="ruleta-svg" viewBox="0 0 300 300"></svg>
+      </div>
 
       <div id="resultado-selector-nombres" class="resultado-herramienta"></div>
       <p id="anuncio-resultado-selector" class="visualmente-oculto" aria-live="polite"></p>
