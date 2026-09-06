@@ -355,9 +355,13 @@
       </div>
 
       <div id="torneo-resultado-zona" class="torneo-resultado-zona" hidden>
-        <button type="button" class="boton-volver" id="btn-volver-resultado-torneo">
-          <span class="flecha-volver" aria-hidden="true">←</span> Editar participantes
-        </button>
+        <div class="torneo-acciones-resultado">
+          <button type="button" class="boton-volver" id="btn-volver-resultado-torneo">
+            <span class="flecha-volver" aria-hidden="true">←</span> Editar participantes
+          </button>
+          <button type="button" class="boton-limpiar" id="btn-modo-intercambio">🔀 Intercambiar posiciones</button>
+          <button type="button" class="boton-generar" id="btn-confirmar-intercambio" hidden>Cambiar</button>
+        </div>
         <div id="resultado-torneo"></div>
       </div>
 

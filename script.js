@@ -1206,6 +1206,77 @@ function elegirGanadorDeTercerPuesto(partidoPorTercerPuesto, ganador) {
   partidoPorTercerPuesto.ganador = ganador;
 }
 
+// --- Edición manual de la Ronda 1: renombrar e intercambiar posiciones ---
+
+// Cambia el nombre en un casillero puntual (ronda, partido, lado A o B) y,
+// si ese jugador ya había ganado partidos posteriores, corrige también su
+// nombre ahí. Siempre trabaja por posición (ronda/partido/lado), nunca
+// buscando por texto — dos participantes podrían llamarse igual.
+function renombrarParticipante(rondas, partidoPorTercerPuesto, indiceRonda, indicePartido, esJugadorA, nombreNuevo) {
+  const partido = rondas[indiceRonda][indicePartido];
+  const nombreViejo = esJugadorA ? partido.jugadorA : partido.jugadorB;
+  const eraElGanador = partido.ganador === nombreViejo;
+
+  if (esJugadorA) {
+    partido.jugadorA = nombreNuevo;
+  } else {
+    partido.jugadorB = nombreNuevo;
+  }
+
+  if (!eraElGanador) {
+    corregirNombreEnTercerPuesto(partidoPorTercerPuesto, rondas, indiceRonda, indicePartido, nombreViejo, nombreNuevo);
+    return;
+  }
+
+  partido.ganador = nombreNuevo;
+
+  const siguienteRonda = rondas[indiceRonda + 1];
+  if (!siguienteRonda) return; // era la final, no hay ronda siguiente
+
+  const indicePartidoSiguiente = Math.floor(indicePartido / 2);
+  const esAEnSiguiente = indicePartido % 2 === 0;
+  renombrarParticipante(rondas, partidoPorTercerPuesto, indiceRonda + 1, indicePartidoSiguiente, esAEnSiguiente, nombreNuevo);
+}
+
+// El perdedor de una semifinal vive en partidoPorTercerPuesto: si es a él
+// (o ella) a quien se está renombrando, hay que corregirlo ahí también.
+function corregirNombreEnTercerPuesto(partidoPorTercerPuesto, rondas, indiceRonda, indicePartido, nombreViejo, nombreNuevo) {
+  const esSemifinal = indiceRonda === rondas.length - 2;
+  if (!esSemifinal) return;
+
+  const casillero = indicePartido === 0 ? "jugadorA" : "jugadorB";
+  if (partidoPorTercerPuesto[casillero] !== nombreViejo) return;
+
+  const eraElGanadorDeTercerPuesto = partidoPorTercerPuesto.ganador === nombreViejo;
+  partidoPorTercerPuesto[casillero] = nombreNuevo;
+  if (eraElGanadorDeTercerPuesto) {
+    partidoPorTercerPuesto.ganador = nombreNuevo;
+  }
+}
+
+// Intercambia dos participantes de la Ronda 1 (siempre por posición). Solo
+// se ofrece esta opción para partidos que todavía no tienen ganador — así
+// no hay que preocuparse por deshacer nada que ya se haya propagado.
+function intercambiarParticipantes(rondas, indicePartidoA, esAdeA, indicePartidoB, esAdeB) {
+  const partidoA = rondas[0][indicePartidoA];
+  const partidoB = rondas[0][indicePartidoB];
+
+  const nombreA = esAdeA ? partidoA.jugadorA : partidoA.jugadorB;
+  const nombreB = esAdeB ? partidoB.jugadorA : partidoB.jugadorB;
+
+  if (esAdeA) {
+    partidoA.jugadorA = nombreB;
+  } else {
+    partidoA.jugadorB = nombreB;
+  }
+
+  if (esAdeB) {
+    partidoB.jugadorA = nombreA;
+  } else {
+    partidoB.jugadorB = nombreA;
+  }
+}
+
 // Solo para mostrarlo en pantalla: si el partido ya tiene ganador y quedó
 // en la posición B, devuelve una copia con las posiciones invertidas para
 // que el ganador se dibuje siempre primero. No toca el partido real —
@@ -1313,6 +1384,82 @@ function crearElementoDePartido(partido, alElegir) {
   return contenedor;
 }
 
+// Solo la Ronda 1 se dibuja así: cada nombre lleva un lápiz para editarlo,
+// y si el "modo intercambio" está activo, hacer clic en un nombre lo
+// selecciona para cambiarlo de lugar en vez de elegir ganador (ver
+// edicionRonda1 más abajo). El resto de las rondas se sigue dibujando con
+// crearElementoDePartido normal — esos nombres vienen de acá, se editan
+// desde su casillero de origen.
+function crearElementoDePartidoRonda1(partido, indicePartido, alElegirGanador, alRenombrar, edicionRonda1) {
+  const contenedor = document.createElement("div");
+  contenedor.className = "torneo-partido";
+
+  function crearCasillero(nombre, esJugadorA) {
+    const envoltorio = document.createElement("span");
+    envoltorio.className = "torneo-jugador-envoltorio";
+
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "torneo-jugador";
+
+    if (edicionRonda1.intercambioActivo) {
+      if (partido.ganador !== null) {
+        // Este partido ya se jugó: no se puede usar para intercambiar.
+        boton.disabled = true;
+      } else {
+        const seleccionado = edicionRonda1.estaSeleccionado(indicePartido, esJugadorA);
+        boton.classList.toggle("torneo-jugador--seleccionado-intercambio", seleccionado);
+        boton.addEventListener("click", () => edicionRonda1.alClickParaIntercambiar(indicePartido, esJugadorA));
+      }
+    } else {
+      if (nombre === partido.ganador) {
+        boton.classList.add("torneo-jugador--ganador");
+      }
+      boton.addEventListener("click", () => alElegirGanador(nombre));
+    }
+
+    boton.textContent = nombre;
+    envoltorio.appendChild(boton);
+
+    if (!edicionRonda1.intercambioActivo) {
+      const botonEditar = document.createElement("button");
+      botonEditar.type = "button";
+      botonEditar.className = "torneo-boton-editar";
+      botonEditar.title = "Editar nombre";
+      botonEditar.setAttribute("aria-label", `Editar nombre de ${nombre}`);
+      botonEditar.textContent = "✏️";
+      botonEditar.addEventListener("click", () => alRenombrar(esJugadorA));
+      envoltorio.appendChild(botonEditar);
+    }
+
+    return envoltorio;
+  }
+
+  const esBye = partido.jugadorA === null || partido.jugadorB === null;
+
+  if (esBye) {
+    const esJugadorAPorBye = partido.jugadorA !== null;
+    const ganadorPorBye = esJugadorAPorBye ? partido.jugadorA : partido.jugadorB;
+    contenedor.appendChild(crearCasillero(ganadorPorBye, esJugadorAPorBye));
+    const etiquetaBye = document.createElement("span");
+    etiquetaBye.className = "torneo-bye-etiqueta";
+    etiquetaBye.textContent = "(pasa libre)";
+    contenedor.appendChild(etiquetaBye);
+    return contenedor;
+  }
+
+  contenedor.appendChild(crearCasillero(partido.jugadorA, true));
+
+  const separador = document.createElement("span");
+  separador.className = "torneo-vs";
+  separador.textContent = "vs";
+  contenedor.appendChild(separador);
+
+  contenedor.appendChild(crearCasillero(partido.jugadorB, false));
+
+  return contenedor;
+}
+
 // Arma las columnas de UNA mitad de la llave (todas las rondas salvo la
 // final, que va sola en el centro). Cada columna se queda con la mitad de
 // los partidos de esa ronda que le toca a este lado, pero recordando el
@@ -1373,7 +1520,7 @@ function calcularGapDeRonda(indiceRonda) {
 // línea conectora en forma de "codo" entre cada dos partidos y el siguiente).
 // La columna con un solo partido (la última antes de la final) lleva una
 // línea recta simple en vez de un codo.
-function crearColumnaDeTorneo(columnaInfo, cantidadDeRondas, esLadoDerecho, alElegirGanador) {
+function crearColumnaDeTorneo(columnaInfo, cantidadDeRondas, esLadoDerecho, alElegirGanador, alRenombrar, edicionRonda1) {
   const columna = document.createElement("div");
   columna.className = "torneo-columna";
 
@@ -1385,14 +1532,28 @@ function crearColumnaDeTorneo(columnaInfo, cantidadDeRondas, esLadoDerecho, alEl
 
   const ladoTexto = esLadoDerecho ? "derecha" : "izquierda";
   const esColumnaDeUnSoloPartido = columnaInfo.partidos.length === 1;
+  const esRonda1 = columnaInfo.indiceRonda === 0;
   const nombreDeEstaEtapa = nombreDeRonda(cantidadDeRondas, columnaInfo.indiceRonda);
   let esElPrimerElementoDeLaColumna = true;
 
-  for (let i = 0; i < columnaInfo.partidos.length; i += esColumnaDeUnSoloPartido ? 1 : 2) {
-    const item = columnaInfo.partidos[i];
-    const elementoPartido = crearElementoDePartido(item.partido, (jugador) => {
+  function dibujarPartido(item) {
+    if (esRonda1) {
+      return crearElementoDePartidoRonda1(
+        item.partido,
+        item.indicePartido,
+        (jugador) => alElegirGanador(columnaInfo.indiceRonda, item.indicePartido, jugador),
+        (esJugadorA) => alRenombrar(item.indicePartido, esJugadorA),
+        edicionRonda1
+      );
+    }
+    return crearElementoDePartido(item.partido, (jugador) => {
       alElegirGanador(columnaInfo.indiceRonda, item.indicePartido, jugador);
     });
+  }
+
+  for (let i = 0; i < columnaInfo.partidos.length; i += esColumnaDeUnSoloPartido ? 1 : 2) {
+    const item = columnaInfo.partidos[i];
+    const elementoPartido = dibujarPartido(item);
 
     if (esColumnaDeUnSoloPartido) {
       elementoPartido.classList.add(`torneo-partido--conector-${ladoTexto}`);
@@ -1405,9 +1566,7 @@ function crearColumnaDeTorneo(columnaInfo, cantidadDeRondas, esLadoDerecho, alEl
     }
 
     const itemPareja = columnaInfo.partidos[i + 1];
-    const elementoPareja = crearElementoDePartido(itemPareja.partido, (jugador) => {
-      alElegirGanador(columnaInfo.indiceRonda, itemPareja.indicePartido, jugador);
-    });
+    const elementoPareja = dibujarPartido(itemPareja);
 
     const par = document.createElement("div");
     par.className = `torneo-par torneo-par--${ladoTexto}`;
@@ -1427,7 +1586,15 @@ function crearColumnaDeTorneo(columnaInfo, cantidadDeRondas, esLadoDerecho, alEl
   return columna;
 }
 
-function mostrarLlaveDeTorneo(rondas, partidoPorTercerPuesto, elementoResultado, alElegirGanador, alElegirGanadorTercerPuestoUI) {
+function mostrarLlaveDeTorneo(
+  rondas,
+  partidoPorTercerPuesto,
+  elementoResultado,
+  alElegirGanador,
+  alElegirGanadorTercerPuestoUI,
+  alRenombrar,
+  edicionRonda1
+) {
   elementoResultado.innerHTML = "";
 
   const llaveDoble = document.createElement("div");
@@ -1436,13 +1603,17 @@ function mostrarLlaveDeTorneo(rondas, partidoPorTercerPuesto, elementoResultado,
   const mitadIzquierda = document.createElement("div");
   mitadIzquierda.className = "torneo-mitad torneo-mitad--izquierda";
   armarColumnasDeMitad(rondas, false).forEach((columnaInfo) => {
-    mitadIzquierda.appendChild(crearColumnaDeTorneo(columnaInfo, rondas.length, false, alElegirGanador));
+    mitadIzquierda.appendChild(
+      crearColumnaDeTorneo(columnaInfo, rondas.length, false, alElegirGanador, alRenombrar, edicionRonda1)
+    );
   });
 
   const mitadDerecha = document.createElement("div");
   mitadDerecha.className = "torneo-mitad torneo-mitad--derecha";
   armarColumnasDeMitad(rondas, true).forEach((columnaInfo) => {
-    mitadDerecha.appendChild(crearColumnaDeTorneo(columnaInfo, rondas.length, true, alElegirGanador));
+    mitadDerecha.appendChild(
+      crearColumnaDeTorneo(columnaInfo, rondas.length, true, alElegirGanador, alRenombrar, edicionRonda1)
+    );
   });
 
   const centro = document.createElement("div");
@@ -1496,10 +1667,14 @@ function configurarTorneo() {
   const elementoResultado = document.getElementById("resultado-torneo");
   const elementoAnuncio = document.getElementById("anuncio-torneo");
   const contenedorParticipantes = document.getElementById("contenedor-participantes-torneo");
+  const botonModoIntercambio = document.getElementById("btn-modo-intercambio");
+  const botonConfirmarIntercambio = document.getElementById("btn-confirmar-intercambio");
 
   let rondasActuales = [];
   let partidoPorTercerPuestoActual = { jugadorA: undefined, jugadorB: undefined, ganador: null };
   let tamanoElegido = 0;
+  let modoIntercambioActivo = false;
+  let seleccionParaIntercambiar = []; // hasta 2: { indicePartido, esJugadorA }
 
   // El bracket necesita todo el ancho de la página, así que a diferencia de
   // las otras herramientas no usa el overlay flotante: acá "mostrar el
@@ -1522,6 +1697,8 @@ function configurarTorneo() {
     formulario.hidden = true;
     elementoError.hidden = true;
     ocultarResultado();
+    modoIntercambioActivo = false;
+    seleccionParaIntercambiar = [];
     seccionEleccionTamano.hidden = false;
     botonVolver.hidden = false;
   }
@@ -1544,10 +1721,50 @@ function configurarTorneo() {
   document.getElementById("btn-volver-resultado-torneo").addEventListener("click", () => {
     zonaResultado.hidden = true;
     formulario.hidden = false;
+    modoIntercambioActivo = false;
+    seleccionParaIntercambiar = [];
   });
 
+  const edicionRonda1 = {
+    intercambioActivo: false,
+    estaSeleccionado(indicePartido, esJugadorA) {
+      return seleccionParaIntercambiar.some(
+        (s) => s.indicePartido === indicePartido && s.esJugadorA === esJugadorA
+      );
+    },
+    alClickParaIntercambiar(indicePartido, esJugadorA) {
+      if (edicionRonda1.estaSeleccionado(indicePartido, esJugadorA)) {
+        seleccionParaIntercambiar = seleccionParaIntercambiar.filter(
+          (s) => !(s.indicePartido === indicePartido && s.esJugadorA === esJugadorA)
+        );
+      } else if (seleccionParaIntercambiar.length < 2) {
+        seleccionParaIntercambiar.push({ indicePartido, esJugadorA });
+      } else {
+        // Ya había 2 elegidos: se empieza de nuevo con este.
+        seleccionParaIntercambiar = [{ indicePartido, esJugadorA }];
+      }
+      redibujar();
+    },
+  };
+
   function redibujar() {
-    mostrarLlaveDeTorneo(rondasActuales, partidoPorTercerPuestoActual, elementoResultado, alElegirGanador, alElegirGanadorTercerPuesto);
+    edicionRonda1.intercambioActivo = modoIntercambioActivo;
+
+    mostrarLlaveDeTorneo(
+      rondasActuales,
+      partidoPorTercerPuestoActual,
+      elementoResultado,
+      alElegirGanador,
+      alElegirGanadorTercerPuesto,
+      alRenombrarParticipante,
+      edicionRonda1
+    );
+
+    botonModoIntercambio.classList.toggle("boton-activo", modoIntercambioActivo);
+    botonModoIntercambio.textContent = modoIntercambioActivo
+      ? "✕ Cancelar intercambio"
+      : "🔀 Intercambiar posiciones";
+    botonConfirmarIntercambio.hidden = seleccionParaIntercambiar.length !== 2;
   }
 
   function alElegirGanador(indiceRonda, indicePartido, jugador) {
@@ -1567,6 +1784,42 @@ function configurarTorneo() {
     redibujar();
     elementoAnuncio.textContent = `Tercer puesto: ${jugador}.`;
   }
+
+  // El lápiz de cada nombre en la Ronda 1 llega hasta acá. Usamos prompt()
+  // (el cuadro de diálogo nativo del navegador para pedir un texto corto):
+  // es simple, confiable, y no hace falta armar un campo de edición propio
+  // para algo que se usa de vez en cuando.
+  function alRenombrarParticipante(indicePartido, esJugadorA) {
+    const partido = rondasActuales[0][indicePartido];
+    const nombreActual = esJugadorA ? partido.jugadorA : partido.jugadorB;
+    const nombreNuevo = window.prompt("Nuevo nombre:", nombreActual);
+    if (nombreNuevo === null) return; // canceló
+
+    const texto = nombreNuevo.trim();
+    if (!contieneAlMenosUnaLetra(texto)) {
+      window.alert("El nombre tiene que tener al menos una letra.");
+      return;
+    }
+
+    renombrarParticipante(rondasActuales, partidoPorTercerPuestoActual, 0, indicePartido, esJugadorA, texto);
+    redibujar();
+    elementoAnuncio.textContent = `${nombreActual} ahora se llama ${texto}.`;
+  }
+
+  botonModoIntercambio.addEventListener("click", () => {
+    modoIntercambioActivo = !modoIntercambioActivo;
+    seleccionParaIntercambiar = [];
+    redibujar();
+  });
+
+  botonConfirmarIntercambio.addEventListener("click", () => {
+    if (seleccionParaIntercambiar.length !== 2) return;
+    const [primero, segundo] = seleccionParaIntercambiar;
+    intercambiarParticipantes(rondasActuales, primero.indicePartido, primero.esJugadorA, segundo.indicePartido, segundo.esJugadorA);
+    seleccionParaIntercambiar = [];
+    redibujar();
+    elementoAnuncio.textContent = "Se intercambiaron dos participantes de posición.";
+  });
 
   formulario.addEventListener("reset", () => {
     generarCamposDeParticipantesTorneo(contenedorParticipantes, tamanoElegido);

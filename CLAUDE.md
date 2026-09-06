@@ -40,7 +40,7 @@ RandomBox es una caja de herramientas web para elegir al azar, organizar persona
 - [x] FASE 5 — Generador de grupos
 - [x] FASE 6 — Lanzamiento de moneda
 - [x] FASE 7 — Mezclador
-- [~] FASE 8 — Base de torneos (generar llave + marcar ganadores listo; falta editar nombres e intercambiar participantes)
+- [x] FASE 8 — Base de torneos
 - [ ] FASE 9 — Testing y correcciones
 - [ ] FASE 10 — Mejoras visuales y responsive
 - [ ] FASE 11 — Preparación para publicación
@@ -150,6 +150,6 @@ Esta pantalla usa `.pantalla-herramienta--ancha` (1400px) porque la llave necesi
 
 **Tercer puesto**: el perdedor de cada semifinal pasa automáticamente a `partidoPorTercerPuesto` (variable de estado aparte, no vive dentro de `rondas` porque no es parte del árbol de eliminación). `elegirGanador()` lo llena al decidir una semifinal; `deshacerAvanceDeGanador()` también lo limpia si se deshace una semifinal en cascada (por ejemplo, al corregir un cuartos de final que ya había producido un resultado de semifinal y de tercer puesto). `elegirGanadorDeTercerPuesto()` es independiente y simple: no hay nada que propagar después, es un partido sin descendencia en la llave.
 
-Falta (para más adelante, no construir sin que el usuario lo pida): editar el nombre de un participante ya cargado en la llave, e intercambiar participantes de posición ("modificar posiciones", "cambiar participantes" del spec original).
+**Edición manual de la Ronda 1 (renombrar e intercambiar)**: a propósito, solo se puede editar desde la Ronda 1 (donde se cargan los nombres originales) — no desde rondas más avanzadas, para no tener que sincronizar cambios en dos direcciones. Cada nombre de Ronda 1 tiene un lápiz (`.torneo-boton-editar`) que llama a `alRenombrarParticipante()`, que usa `window.prompt()` nativo (simple, sin campo de edición propio) y valida con `contieneAlMenosUnaLetra()` igual que en cualquier otra lista de la app. `renombrarParticipante()` corrige el nombre por **posición** (ronda/partido/lado A o B), nunca buscando por texto — dos participantes podrían llamarse igual — y si ese jugador ya había ganado partidos posteriores, cascada el cambio hacia adelante (misma idea recursiva que `deshacerAvanceDeGanador`) y hacia `partidoPorTercerPuesto` si corresponde (`corregirNombreEnTercerPuesto`). Intercambiar posición usa un **modo** en vez de un control por nombre: el botón "🔀 Intercambiar posiciones" (`btn-modo-intercambio`) activa `modoIntercambioActivo`, y mientras está activo, hacer clic en un nombre de Ronda 1 (con partido sin decidir) lo selecciona/deselecciona (`edicionRonda1.alClickParaIntercambiar`, resaltado con `.torneo-jugador--seleccionado-intercambio`) en vez de elegir ganador; con 2 seleccionados aparece el botón "Cambiar" (`btn-confirmar-intercambio`) que ejecuta `intercambiarParticipantes()`. Los partidos ya decididos quedan deshabilitados mientras el modo está activo. Solo se ofrece entre partidos de Ronda 1 que **todavía no tienen ganador** — evita tener que deshacer resultados ya elegidos. `crearElementoDePartidoRonda1()` es una versión aparte de `crearElementoDePartido()` con estos controles extra (recibe el objeto `edicionRonda1` con el estado del modo); el resto de las rondas sigue usando la función original sin cambios.
 
-Próximo paso: terminar FASE 8 con esas ediciones, o pasar a FASE 9 (testing) si el usuario prefiere dejarlas para después — preguntar, no asumir.
+FASE 8 completa. Próximo paso: FASE 9 — Testing y correcciones (no avanzar sin que el usuario lo pida).
