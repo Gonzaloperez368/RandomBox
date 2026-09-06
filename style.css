@@ -1,0 +1,67 @@
+/* FASE 1: solo lo necesario para que la página no se vea rota.
+   El sistema de diseño completo (colores, tipografía, layout) llega en FASE 2. */
+
+:root {
+  --color-fondo: #14161a;
+  --color-texto: #f2f2f2;
+  --color-primario: #7c5cff;
+  --color-acento: #00d4b4;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+img {
+  max-width: 100%;
+}
+
+body {
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+header {
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+header h1 {
+  color: var(--color-primario);
+  font-size: 2rem;
+}
+
+section {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+section ul {
+  list-style: none;
+}
+
+section li {
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  background-color: rgba(124, 92, 255, 0.15);
+  border-left: 3px solid var(--color-acento);
+}
+
+main {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 1rem;
+  text-align: center;
+}
+
+footer {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: rgba(242, 242, 242, 0.6);
+  font-size: 0.9rem;
+}

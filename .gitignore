@@ -1,0 +1,18 @@
+# Sistema operativo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Node (por si en FASE 9 se suma Playwright para testing)
+node_modules/
+package-lock.json
+npm-debug.log*
+
+# Secretos
+.env
+.env.local
