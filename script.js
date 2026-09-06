@@ -1321,16 +1321,35 @@ function generarCamposDeParticipantesTorneo(contenedor, cantidad) {
 
 // Los campos vacíos no cuentan como participante (van a ser "bye" en la
 // llave). No hace falta un tope: la cantidad de campos ya es el tamaño elegido.
+// Además de los nombres cargados, devuelve en qué números de campo (1, 2, 3...)
+// quedó vacío, para poder avisarle al usuario antes de generar la llave.
 function obtenerParticipantesDeTorneo(contenedor) {
   const inputs = contenedor.querySelectorAll("input[type='text']");
   const participantes = [];
-  inputs.forEach((input) => {
+  const numerosVacios = [];
+  inputs.forEach((input, indice) => {
     const texto = input.value.trim();
     if (contieneAlMenosUnaLetra(texto)) {
       participantes.push(texto);
+    } else {
+      numerosVacios.push(indice + 1);
     }
   });
-  return participantes;
+  return { participantes, numerosVacios };
+}
+
+// Nombres que aparecen más de una vez en la lista (sin duplicados en el
+// resultado: si "Ana" se repite 3 veces, aparece una sola vez acá).
+function obtenerNombresRepetidos(participantes) {
+  const vistos = new Set();
+  const repetidos = new Set();
+  participantes.forEach((nombre) => {
+    if (vistos.has(nombre)) {
+      repetidos.add(nombre);
+    }
+    vistos.add(nombre);
+  });
+  return [...repetidos];
 }
 
 function crearElementoDePartido(partido, alElegir) {
@@ -1669,12 +1688,19 @@ function configurarTorneo() {
   const contenedorParticipantes = document.getElementById("contenedor-participantes-torneo");
   const botonModoIntercambio = document.getElementById("btn-modo-intercambio");
   const botonConfirmarIntercambio = document.getElementById("btn-confirmar-intercambio");
+  const elementoAviso = document.getElementById("aviso-torneo");
+  const mensajeAviso = document.getElementById("aviso-torneo-mensaje");
+  const botonAvisoContinuar = document.getElementById("btn-aviso-continuar");
+  const botonAvisoCorregir = document.getElementById("btn-aviso-corregir");
 
   let rondasActuales = [];
   let partidoPorTercerPuestoActual = { jugadorA: undefined, jugadorB: undefined, ganador: null };
   let tamanoElegido = 0;
   let modoIntercambioActivo = false;
   let seleccionParaIntercambiar = []; // hasta 2: { indicePartido, esJugadorA }
+  // Participantes ya validados, esperando que el usuario confirme el aviso
+  // de campos vacíos o nombres repetidos antes de generar la llave.
+  let participantesPendientes = null;
 
   // El bracket necesita todo el ancho de la página, así que a diferencia de
   // las otras herramientas no usa el overlay flotante: acá "mostrar el
@@ -1690,12 +1716,27 @@ function configurarTorneo() {
     elementoResultado.innerHTML = "";
   }
 
+  // El aviso de "faltan campos" / "hay nombres repetidos" reemplaza a
+  // window.confirm(): mismo botón "Sí, continuar" arma la llave con los
+  // participantes ya calculados en participantesPendientes.
+  function mostrarAviso(mensaje) {
+    mensajeAviso.textContent = `${mensaje} ¿Querés continuar igual?`;
+    elementoAviso.hidden = false;
+  }
+
+  function ocultarAviso() {
+    elementoAviso.hidden = true;
+    mensajeAviso.textContent = "";
+    participantesPendientes = null;
+  }
+
   // Mismo patrón que en el selector de nombres y en grupos: primero se elige
   // una opción en una pantalla aparte (acá, cuántos jugadores), y recién
   // después aparece el formulario — ya con la cantidad de campos correcta.
   function mostrarEleccionDeTamano() {
     formulario.hidden = true;
     elementoError.hidden = true;
+    ocultarAviso();
     ocultarResultado();
     modoIntercambioActivo = false;
     seleccionParaIntercambiar = [];
@@ -1824,20 +1865,13 @@ function configurarTorneo() {
   formulario.addEventListener("reset", () => {
     generarCamposDeParticipantesTorneo(contenedorParticipantes, tamanoElegido);
     elementoError.hidden = true;
+    ocultarAviso();
   });
 
-  formulario.addEventListener("submit", (evento) => {
-    evento.preventDefault();
-
-    const participantes = obtenerParticipantesDeTorneo(contenedorParticipantes);
-    const mensajeError = validarDatosTorneo(participantes);
-
-    if (mensajeError) {
-      elementoError.textContent = mensajeError;
-      elementoError.hidden = false;
-      return;
-    }
-
+  // Arma la llave de verdad y muestra el resultado — la usan tanto el envío
+  // normal del formulario (cuando no hace falta avisar nada) como el botón
+  // "Sí, continuar" del aviso (cuando el usuario decide seguir igual).
+  function generarYMostrarLlave(participantes) {
     elementoError.hidden = true;
     rondasActuales = generarLlaveDeTorneo(participantes, tamanoElegido);
     partidoPorTercerPuestoActual = { jugadorA: undefined, jugadorB: undefined, ganador: null };
@@ -1850,5 +1884,49 @@ function configurarTorneo() {
     // scroll (no el CSS) para arrancar con la Final centrada en pantalla en
     // vez del extremo izquierdo — sin esto, seguimos viendo Ronda 1 primero.
     elementoResultado.scrollLeft = (elementoResultado.scrollWidth - elementoResultado.clientWidth) / 2;
+  }
+
+  botonAvisoContinuar.addEventListener("click", () => {
+    const participantes = participantesPendientes;
+    ocultarAviso();
+    if (participantes) {
+      generarYMostrarLlave(participantes);
+    }
+  });
+
+  botonAvisoCorregir.addEventListener("click", () => {
+    ocultarAviso();
+  });
+
+  formulario.addEventListener("submit", (evento) => {
+    evento.preventDefault();
+    ocultarAviso();
+
+    const { participantes, numerosVacios } = obtenerParticipantesDeTorneo(contenedorParticipantes);
+    const mensajeError = validarDatosTorneo(participantes);
+
+    if (mensajeError) {
+      elementoError.textContent = mensajeError;
+      elementoError.hidden = false;
+      return;
+    }
+
+    const nombresRepetidos = obtenerNombresRepetidos(participantes);
+    if (numerosVacios.length > 0 || nombresRepetidos.length > 0) {
+      const partesAviso = [];
+      if (numerosVacios.length > 0) {
+        const lista = numerosVacios.map((numero) => `Participante ${numero}`).join(", ");
+        partesAviso.push(`No completaste: ${lista}. Van a quedar como posiciones libres en la llave.`);
+      }
+      if (nombresRepetidos.length > 0) {
+        const lista = nombresRepetidos.join(", ");
+        partesAviso.push(`Hay nombres repetidos: ${lista}.`);
+      }
+      participantesPendientes = participantes;
+      mostrarAviso(partesAviso.join(" "));
+      return;
+    }
+
+    generarYMostrarLlave(participantes);
   });
 }

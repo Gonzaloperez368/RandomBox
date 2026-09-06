@@ -352,6 +352,14 @@
         </form>
 
         <p id="error-torneo" class="mensaje-error" role="alert" hidden></p>
+
+        <div id="aviso-torneo" class="torneo-aviso" hidden>
+          <p id="aviso-torneo-mensaje" aria-live="assertive"></p>
+          <div class="torneo-aviso-acciones">
+            <button type="button" class="boton-generar" id="btn-aviso-continuar">Sí, continuar</button>
+            <button type="button" class="boton-limpiar" id="btn-aviso-corregir">No, corregir</button>
+          </div>
+        </div>
       </div>
 
       <div id="torneo-resultado-zona" class="torneo-resultado-zona" hidden>
