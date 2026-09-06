@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   configurarSelectorDeNombres();
   configurarGeneradorDeGrupos();
   configurarLanzamientoDeMoneda();
+  configurarMezclador();
 });
 
 // --- Navegación entre la pantalla de inicio y la pantalla de una herramienta ---
@@ -39,6 +40,7 @@ function configurarNavegacionHerramientas() {
   conectarHerramienta("btn-selector-nombres", "pantalla-selector-nombres", "btn-volver-selector");
   conectarHerramienta("btn-generador-grupos", "pantalla-generador-grupos", "btn-volver-grupos");
   conectarHerramienta("btn-lanzamiento-moneda", "pantalla-lanzamiento-moneda", "btn-volver-moneda");
+  conectarHerramienta("btn-mezclador", "pantalla-mezclador", "btn-volver-mezclador");
 }
 
 // --- Utilidades compartidas entre herramientas ---
@@ -177,6 +179,13 @@ function configurarGeneradorDeNumeros() {
     ocultarOverlayDeResultado(formulario, overlay);
   });
 
+  // El botón "Limpiar" es type="reset": el navegador ya se encarga de volver
+  // mínimo/máximo/cantidad/repetidos a los valores originales del HTML. Acá
+  // solo ocultamos el mensaje de error, que el navegador no toca solo.
+  formulario.addEventListener("reset", () => {
+    elementoError.hidden = true;
+  });
+
   formulario.addEventListener("submit", (evento) => {
     evento.preventDefault(); // evita que la página se recargue
 
@@ -297,6 +306,20 @@ function obtenerOpcionesValidas(contenedor) {
     }
   });
   return opciones;
+}
+
+// Deja la lista como al principio: un solo campo vacío. La usa el botón
+// "Limpiar" de cada herramienta que tenga una lista dinámica.
+function reiniciarListaDeOpciones(contenedor) {
+  const campos = contenedor.querySelectorAll(".campo-opcion");
+  campos.forEach((campo, indice) => {
+    if (indice === 0) {
+      campo.querySelector(".input-opcion").value = "";
+    } else {
+      campo.remove();
+    }
+  });
+  renumerarCampos(contenedor);
 }
 
 function elegirElementoAleatorio(lista) {
@@ -590,6 +613,13 @@ function configurarSelectorDeNombres() {
 
   configurarBotonVolverDeResultado("btn-volver-resultado-selector", formulario, overlay);
 
+  // "Limpiar" resetea cantidad/repetidos solo (lo hace el navegador, por ser
+  // type="reset"), y acá además vaciamos la lista de opciones a un campo.
+  formulario.addEventListener("reset", () => {
+    reiniciarListaDeOpciones(contenedorOpciones);
+    elementoError.hidden = true;
+  });
+
   // El modo elegido se guarda en el propio <form> (data-modo), así no hace
   // falta ningún radio button: el formulario "recuerda" con qué modo trabajar.
   // "Volver" (al inicio) solo se ve en la elección de modo; con el formulario
@@ -803,6 +833,11 @@ function configurarGeneradorDeGrupos() {
 
   configurarBotonVolverDeResultado("btn-volver-resultado-grupos", formulario, overlay);
 
+  formulario.addEventListener("reset", () => {
+    reiniciarListaDeOpciones(contenedorParticipantes);
+    elementoError.hidden = true;
+  });
+
   // Mismo patrón que en el selector de nombres: primero se elige el modo
   // (acá, "por cantidad de grupos" o "por personas por grupo"), y recién
   // después aparece el formulario para cargar participantes.
@@ -926,6 +961,10 @@ function configurarLanzamientoDeMoneda() {
     ocultarOverlayDeResultado(formulario, overlay);
   });
 
+  formulario.addEventListener("reset", () => {
+    elementoError.hidden = true;
+  });
+
   formulario.querySelectorAll(".boton-atajo").forEach((boton) => {
     boton.addEventListener("click", () => {
       campoCantidad.value = boton.dataset.cantidad;
@@ -950,4 +989,66 @@ function configurarLanzamientoDeMoneda() {
     elementoAnuncio.textContent = `${elementoResumen.textContent}.`;
     mostrarOverlayDeResultado(formulario, overlay);
   });
+}
+
+// --- Mezclador ---
+
+function validarDatosMezclador(elementos) {
+  if (elementos.length < 2) {
+    return "Agregá al menos 2 elementos para mezclar.";
+  }
+  return null;
+}
+
+function configurarMezclador() {
+  configurarListaDeOpciones("contenedor-mezclador");
+
+  const formulario = document.getElementById("form-mezclador");
+  const overlay = document.getElementById("overlay-mezclador");
+  const elementoError = document.getElementById("error-mezclador");
+  const elementoResultado = document.getElementById("resultado-mezclador");
+  const elementoAnuncio = document.getElementById("anuncio-mezclador");
+  const contenedorElementos = document.getElementById("contenedor-mezclador");
+
+  configurarBotonVolverDeResultado("btn-volver-resultado-mezclador", formulario, overlay);
+
+  document.getElementById("btn-mezclador").addEventListener("click", () => {
+    ocultarOverlayDeResultado(formulario, overlay);
+  });
+
+  formulario.addEventListener("reset", () => {
+    reiniciarListaDeOpciones(contenedorElementos);
+    elementoError.hidden = true;
+  });
+
+  // La usan tanto el botón "Mezclar" del formulario como "Volver a mezclar"
+  // de adentro del resultado, así no se repite la misma lógica dos veces.
+  function mezclarYMostrar() {
+    const elementos = obtenerOpcionesValidas(contenedorElementos);
+    const mensajeError = validarDatosMezclador(elementos);
+
+    if (mensajeError) {
+      elementoError.textContent = mensajeError;
+      elementoError.hidden = false;
+      return;
+    }
+
+    elementoError.hidden = true;
+    const mezclados = mezclarLista(elementos);
+
+    elementoResultado.innerHTML = "";
+    mezclados.forEach((elemento) => {
+      elementoResultado.appendChild(crearCasillero(elemento));
+    });
+
+    elementoAnuncio.textContent = `Orden mezclado: ${mezclados.join(", ")}.`;
+    mostrarOverlayDeResultado(formulario, overlay);
+  }
+
+  formulario.addEventListener("submit", (evento) => {
+    evento.preventDefault();
+    mezclarYMostrar();
+  });
+
+  document.getElementById("btn-volver-a-mezclar").addEventListener("click", mezclarYMostrar);
 }

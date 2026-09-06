@@ -361,6 +361,13 @@ footer {
   outline-offset: 1px;
 }
 
+.acciones-overlay {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
 .resumen-moneda {
   font-size: 1.1rem;
   font-weight: 700;
@@ -467,6 +474,41 @@ footer {
 .boton-generar:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.acciones-formulario {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.acciones-formulario .boton-generar {
+  flex: 1;
+}
+
+.boton-limpiar {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.boton-limpiar:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.boton-limpiar:focus {
+  outline: none;
+}
+
+.boton-limpiar:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .mensaje-error {

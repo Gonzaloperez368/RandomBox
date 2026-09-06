@@ -39,7 +39,7 @@ RandomBox es una caja de herramientas web para elegir al azar, organizar persona
 - [x] FASE 4 — Selector de nombres + ruleta
 - [x] FASE 5 — Generador de grupos
 - [x] FASE 6 — Lanzamiento de moneda
-- [ ] FASE 7 — Mezclador
+- [x] FASE 7 — Mezclador
 - [ ] FASE 8 — Base de torneos
 - [ ] FASE 9 — Testing y correcciones
 - [ ] FASE 10 — Mejoras visuales y responsive
@@ -110,6 +110,10 @@ Pedido explícito del usuario, aplica a **todas** las herramientas con resultado
 
 En JS: `mostrarOverlayDeResultado(formulario, overlay)` al generar un resultado con éxito, `configurarBotonVolverDeResultado(idBoton, formulario, overlay)` para conectar el botón "Volver" de abajo del resultado (cierra el overlay, el formulario y lo ya escrito quedan intactos — nunca se limpia nada). Los mensajes de error quedan **fuera** de `.zona-resultado`, no activan el overlay. Ver `configurarGeneradorDeNumeros`, `configurarSelectorDeNombres` y `configurarGeneradorDeGrupos` para ejemplos ya andando.
 
+## Botón "Limpiar" (patrón fijo para todas)
+
+Las 5 herramientas con formulario tienen un botón `<button type="reset" class="boton-limpiar">Limpiar</button>` junto al botón principal, dentro de un `<div class="acciones-formulario">`. Es un `type="reset"` real: el navegador solo, sin JS, devuelve los campos simples (números, checkboxes) a los valores que tienen escritos en el HTML (`value="..."`, `checked`). Lo que el navegador NO sabe resetear es la lista dinámica de opciones (los campos que se agregaron con JS) — para eso, cada herramienta con lista escucha el evento `reset` del formulario y llama a `reiniciarListaDeOpciones(contenedor)`, que la deja en un solo campo vacío. "Limpiar" **no** cambia el modo elegido (Revelación/Ruleta, cantidad de grupos/personas por grupo) — solo los datos cargados. Herramienta nueva con formulario → agregar el mismo botón y, si tiene lista dinámica, el mismo listener de `reset`.
+
 ## Estado actual
 
 FASE 3 completada: generador de números con validación, siempre en modo Ruleta. Se probó primero con un selector Revelación/Ruleta, pero el usuario prefirió sacarlo: no quiere elegir un modo cada vez que genera, prefiere una única forma fija de mostrar el resultado.
@@ -128,4 +132,6 @@ FASE 5 completada: generador de grupos. Reusa la lista dinámica de opciones (ah
 
 FASE 6 completada: lanzamiento de moneda. Sin animación de giro (el spec permite que sea opcional, y con hasta 100+ lanzamientos de una vez animar cada uno sería lento) — reusa el mismo patrón de resultado flotante. Atajos 1/10/100 son botones que solo rellenan el campo de cantidad, no un modo aparte. `MAXIMO_LANZAMIENTOS = 10000` es un tope defensivo propio (no pedido por el spec) para evitar que un error de tipeo cuelgue el navegador dibujando demasiados casilleros — mismo criterio a aplicar si alguna herramienta futura permite cantidades sin límite explícito.
 
-Próximo paso: FASE 7 — Mezclador (no avanzar sin que el usuario lo pida).
+FASE 7 completada: mezclador. Reusa la lista dinámica de opciones y `mezclarLista()` (la que ya existía desde FASE 5) sin cambiarle una línea — justo el reuso que se había anticipado al construirla. El resultado tiene dos acciones: "Volver a mezclar" (adentro del overlay, remezcla la misma lista sin volver al formulario) y "← Volver" (cierra el overlay). Las dos usan la misma función `mezclarYMostrar()` para no duplicar lógica.
+
+Próximo paso: FASE 8 — Base de torneos (no avanzar sin que el usuario lo pida).

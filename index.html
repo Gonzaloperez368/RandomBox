@@ -45,10 +45,12 @@
           <p class="herramienta-descripcion">Lanzá una moneda una o varias veces.</p>
         </button>
       </li>
-      <li class="herramienta herramienta--mezclador">
-        <span class="herramienta-icono" aria-hidden="true">🔀</span>
-        <h3 class="herramienta-nombre">Mezclador</h3>
-        <p class="herramienta-descripcion">Reordená una lista aleatoriamente.</p>
+      <li>
+        <button type="button" id="btn-mezclador" class="herramienta herramienta--mezclador">
+          <span class="herramienta-icono" aria-hidden="true">🔀</span>
+          <h3 class="herramienta-nombre">Mezclador</h3>
+          <p class="herramienta-descripcion">Reordená una lista aleatoriamente.</p>
+        </button>
       </li>
       <li class="herramienta herramienta--torneos">
         <span class="herramienta-icono" aria-hidden="true">🏆</span>
@@ -89,7 +91,10 @@
             <label for="numero-repetidos">Permitir números repetidos</label>
           </div>
 
-          <button type="submit" class="boton-generar">Generar</button>
+          <div class="acciones-formulario">
+            <button type="submit" class="boton-generar">Generar</button>
+            <button type="reset" class="boton-limpiar">Limpiar</button>
+          </div>
         </form>
 
         <div id="overlay-generador-numeros" class="resultado-overlay" hidden>
@@ -149,7 +154,10 @@
             <label for="selector-repetidos">Permitir elegir el mismo elemento más de una vez</label>
           </div>
 
-          <button type="submit" class="boton-generar">Elegir</button>
+          <div class="acciones-formulario">
+            <button type="submit" class="boton-generar">Elegir</button>
+            <button type="reset" class="boton-limpiar">Limpiar</button>
+          </div>
         </form>
 
         <div id="overlay-selector-nombres" class="resultado-overlay" hidden>
@@ -208,7 +216,10 @@
             <input type="number" id="grupos-numero" name="numero" value="2" min="1" step="1" required>
           </div>
 
-          <button type="submit" class="boton-generar">Generar grupos</button>
+          <div class="acciones-formulario">
+            <button type="submit" class="boton-generar">Generar grupos</button>
+            <button type="reset" class="boton-limpiar">Limpiar</button>
+          </div>
         </form>
 
         <div id="overlay-generador-grupos" class="resultado-overlay" hidden>
@@ -241,7 +252,10 @@
             </div>
           </div>
 
-          <button type="submit" class="boton-generar">Lanzar</button>
+          <div class="acciones-formulario">
+            <button type="submit" class="boton-generar">Lanzar</button>
+            <button type="reset" class="boton-limpiar">Limpiar</button>
+          </div>
         </form>
 
         <div id="overlay-lanzamiento-moneda" class="resultado-overlay" hidden>
@@ -255,6 +269,42 @@
 
       <p id="error-lanzamiento-moneda" class="mensaje-error" role="alert" hidden></p>
       <p id="anuncio-lanzamiento-moneda" class="visualmente-oculto" aria-live="polite"></p>
+    </section>
+
+    <section id="pantalla-mezclador" class="pantalla-herramienta" hidden aria-labelledby="mezclador-titulo">
+      <button type="button" class="boton-volver" id="btn-volver-mezclador">
+        <span class="flecha-volver" aria-hidden="true">←</span> Volver
+      </button>
+      <h2 id="mezclador-titulo">Mezclador</h2>
+
+      <div class="zona-resultado">
+        <form id="form-mezclador" class="formulario-herramienta">
+          <div class="contenedor-opciones" id="contenedor-mezclador" data-etiqueta="Elemento">
+            <div class="campo campo-opcion">
+              <label for="contenedor-mezclador-1">Elemento 1</label>
+              <input type="text" id="contenedor-mezclador-1" class="input-opcion">
+            </div>
+          </div>
+
+          <div class="acciones-formulario">
+            <button type="submit" class="boton-generar">Mezclar</button>
+            <button type="reset" class="boton-limpiar">Limpiar</button>
+          </div>
+        </form>
+
+        <div id="overlay-mezclador" class="resultado-overlay" hidden>
+          <div id="resultado-mezclador" class="resultado-herramienta"></div>
+          <div class="acciones-overlay">
+            <button type="button" class="boton-generar" id="btn-volver-a-mezclar">Volver a mezclar</button>
+            <button type="button" class="boton-volver" id="btn-volver-resultado-mezclador">
+              <span class="flecha-volver" aria-hidden="true">←</span> Volver
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p id="error-mezclador" class="mensaje-error" role="alert" hidden></p>
+      <p id="anuncio-mezclador" class="visualmente-oculto" aria-live="polite"></p>
     </section>
   </main>
 
