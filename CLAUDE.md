@@ -34,7 +34,7 @@ RandomBox es una caja de herramientas web para elegir al azar, organizar persona
 ## Roadmap
 
 - [x] FASE 1 — Estructura básica
-- [ ] FASE 2 — Diseño general
+- [x] FASE 2 — Diseño general
 - [ ] FASE 3 — Generador de números
 - [ ] FASE 4 — Selector de nombres + ruleta
 - [ ] FASE 5 — Generador de grupos
@@ -76,15 +76,16 @@ No construir varias fases a la vez, aunque el siguiente paso parezca obvio.
 
 Para cada herramienta, cuando tenga lógica, probar: caso normal, caso límite, caso inválido, caso vacío y reglas de repetición (si aplica).
 
-## Sistema de diseño (definido en FASE 2)
+## Sistema de diseño (definido en FASE 2, revisado después)
 
-Estilo elegido: **claro y colorido, juguetón**. Reutilizar estas variables de `style.css` en vez de inventar colores nuevos:
+Estilo actual: **identidad violeta/azul-violeta sobre neutros claros**, con acentos de color chicos y contenidos (no "arcoíris"). Reutilizar estas variables de `style.css` en vez de inventar colores nuevos:
 
-- `--color-fondo`, `--color-superficie`, `--color-texto`, `--color-texto-suave`, `--color-marca`: paleta base neutra/clara.
-- Un color de acento por herramienta (`--color-numeros`, `--color-nombres`, `--color-grupos`, `--color-moneda`, `--color-mezclador`, `--color-torneos`): se usan como `border-top` de la tarjeta de cada herramienta en `.herramienta--*`, nunca como único indicador (siempre acompañados de un ícono/emoji y texto).
-- Cada herramienta tiene un emoji como ícono decorativo (`aria-hidden="true"`) para no depender de una librería de íconos externa.
-- Las tarjetas de herramientas (`.herramienta`) todavía no son clickeables (no hay `<a>` ni `<button>`): a propósito no tienen `cursor: pointer` ni efecto hover, para no sugerir una funcionalidad que todavía no existe. Eso cambia recién cuando en una fase futura se conecten a su propia pantalla.
+- `--color-primary`, `--color-primary-hover`, `--color-background`, `--color-surface`, `--color-text`, `--color-text-secondary`, `--color-border`: paleta base.
+- Un color de acento por herramienta (`--color-numeros`, `--color-nombres`, `--color-grupos`, `--color-moneda`, `--color-mezclador`, `--color-torneos`) más su variante `-bg` (versión suave): se usan solo como fondo de la placa detrás del ícono (`.herramienta-icono`), nunca pintando toda la tarjeta ni como único indicador (siempre acompañados de ícono y texto).
+- Cada herramienta tiene un emoji como ícono decorativo (`aria-hidden="true"`) — se evaluó reemplazarlos por SVG inline pero se pospuso para no sumar complejidad de golpe; sigue siendo una mejora pendiente válida para el futuro.
+- Las tarjetas (`.herramienta`) ahora sí tienen `cursor: pointer`, hover (elevación + sombra + borde) y `:focus-visible` preparado en el CSS — es una señal visual intencional de que van a ser clickeables, aunque la navegación real todavía no está conectada (son `<li>`, no `<a>`/`<button>`, así que no se les agregó `tabindex`: eso se resuelve solo cuando pasen a ser enlaces reales en una fase futura).
+- Grid de la sección "Herramientas": mobile-first con breakpoints explícitos en `min-width: 640px` (2 columnas) y `min-width: 960px` (3 columnas), no `auto-fit`.
 
 ## Estado actual
 
-FASE 2 completada: sistema de diseño general (paleta clara y colorida, tipografía, grilla de tarjetas responsive para las 6 herramientas). Próximo paso: FASE 3 — Generador de números (no empezar sin que el usuario lo pida).
+FASE 2 completada (estructura y luego revisión de identidad visual). Próximo paso: FASE 3 — Generador de números (no empezar sin que el usuario lo pida).
