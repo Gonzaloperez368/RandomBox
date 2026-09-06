@@ -109,6 +109,14 @@ function generarNumeros(minimo, maximo, cantidad, permitirRepetidos) {
   return generarNumerosSinRepetir(minimo, maximo, cantidad);
 }
 
+// Tope defensivo (no lo pide el spec): cada número se revela con su propio
+// temporizador escalonado (girando 200ms después del anterior) y un
+// intervalo de giro aparte. Con una cantidad muy alta —typo de un cero de
+// más, por ejemplo— el navegador termina con cientos de temporizadores
+// corriendo a la vez y la página se cuelga. Mismo criterio que
+// MAXIMO_LANZAMIENTOS en el lanzamiento de moneda.
+const MAXIMO_NUMEROS_A_GENERAR = 100;
+
 // Devuelve un mensaje de error legible si los datos no son válidos,
 // o null si todo está bien.
 function validarDatosGenerador(minimo, maximo, cantidad, permitirRepetidos) {
@@ -120,6 +128,9 @@ function validarDatosGenerador(minimo, maximo, cantidad, permitirRepetidos) {
   }
   if (cantidad < 1) {
     return "La cantidad debe ser al menos 1.";
+  }
+  if (cantidad > MAXIMO_NUMEROS_A_GENERAR) {
+    return `Como máximo, ${MAXIMO_NUMEROS_A_GENERAR} números por vez.`;
   }
   if (!permitirRepetidos) {
     const cantidadDeNumerosPosibles = maximo - minimo + 1;
@@ -351,12 +362,22 @@ function elegirElementos(lista, cantidad, permitirRepetidos) {
   return elegirElementosSinRepetir(lista, cantidad);
 }
 
+// Tope defensivo (no lo pide el spec): en modo Ruleta cada elección es un
+// giro entero (varios segundos) uno atrás del otro, y en modo Revelación se
+// crean todos los casilleros de golpe — una cantidad muy alta (typo de un
+// cero de más) satura al navegador o vuelve la espera impracticable. Mismo
+// criterio que MAXIMO_LANZAMIENTOS en el lanzamiento de moneda.
+const MAXIMO_A_ELEGIR = 100;
+
 function validarDatosSelector(opciones, cantidad, permitirRepetidos) {
   if (opciones.length === 0) {
     return "Agregá al menos una opción antes de elegir.";
   }
   if (!Number.isInteger(cantidad) || cantidad < 1) {
     return "La cantidad a elegir debe ser al menos 1.";
+  }
+  if (cantidad > MAXIMO_A_ELEGIR) {
+    return `Como máximo, ${MAXIMO_A_ELEGIR} elecciones por vez.`;
   }
   if (!permitirRepetidos && cantidad > opciones.length) {
     return `No se pueden elegir ${cantidad} opciones distintas: solo cargaste ${opciones.length}.`;
@@ -1115,9 +1136,15 @@ function generarLlaveDeTorneo(participantes, tamanoDeLlave) {
     cantidadDePartidosSiguiente /= 2;
   }
 
-  // Los "bye" de la ronda 1 ya tienen ganador: los hacemos avanzar de una vez.
+  // Los "bye" de la ronda 1 (un lado null) ya tienen ganador: los hacemos
+  // avanzar de una vez. Si sobran tantos pases libres que un cruce queda con
+  // los DOS lados null (nadie de ningún lado), también hay que avanzar esa
+  // rama vacía — si no, avanzarGanador nunca se entera de que esa rama nunca
+  // va a tener a nadie, y quien llegue del otro lado se queda esperando para
+  // siempre un rival que no existe.
   primeraRonda.forEach((partido, indice) => {
-    if (partido.ganador !== null) {
+    const esBye = partido.jugadorA === null || partido.jugadorB === null;
+    if (esBye) {
       avanzarGanador(rondas, 0, indice, partido.ganador);
     }
   });
@@ -1125,8 +1152,14 @@ function generarLlaveDeTorneo(participantes, tamanoDeLlave) {
   return rondas;
 }
 
-// Pone al ganador de un partido en el casillero que le corresponde en la
-// ronda siguiente (si la hay: la final no tiene ronda siguiente).
+// Pone al ganador de un partido (o `null` si ese cruce quedó sin nadie de
+// ningún lado) en el casillero que le corresponde en la ronda siguiente.
+// Si con esto el partido de la ronda siguiente queda resuelto solo —porque
+// la otra rama que lo alimenta también es un "pasa libre" o quedó vacía—,
+// lo hace avanzar en cascada también: así alguien con varios pases libres
+// seguidos (típico cuando hay muchos más byes que participantes) llega
+// derecho hasta la primera ronda donde de verdad lo espera otra persona,
+// en vez de quedarse colgado contra un casillero que nunca se completa.
 function avanzarGanador(rondas, indiceRonda, indicePartido, ganador) {
   const siguienteRonda = rondas[indiceRonda + 1];
   if (!siguienteRonda) return;
@@ -1139,6 +1172,21 @@ function avanzarGanador(rondas, indiceRonda, indicePartido, ganador) {
   } else {
     partidoSiguiente.jugadorB = ganador;
   }
+
+  const { jugadorA, jugadorB } = partidoSiguiente;
+  let resultado;
+  if (jugadorA === null && jugadorB === null) {
+    resultado = null; // las dos ramas quedaron vacías: este cruce también
+  } else if (jugadorA === null && typeof jugadorB === "string") {
+    resultado = jugadorB; // pasa libre
+  } else if (jugadorB === null && typeof jugadorA === "string") {
+    resultado = jugadorA; // pasa libre
+  } else {
+    return; // partido real entre dos personas, o falta que la otra rama se decida: nada que resolver todavía
+  }
+
+  partidoSiguiente.ganador = resultado;
+  avanzarGanador(rondas, indiceRonda + 1, indicePartidoSiguiente, resultado);
 }
 
 // Deshace lo que un ganador ya haya provocado más adelante en la llave.
@@ -1375,9 +1423,28 @@ function crearElementoDePartido(partido, alElegir) {
     return marcador;
   }
 
-  const esBye = partido.jugadorA === null || partido.jugadorB === null;
+  // Un lado "null" acá significa "esta rama de la llave nunca va a tener a
+  // nadie" (le siguió el rastro avanzarGanador a una cadena de pases libres
+  // hasta quedarse sin nadie). Puede combinarse con el otro lado siendo:
+  // - un nombre real -> bye ya decidido, esa persona pasa derecho.
+  // - null también -> el cruce entero quedó vacío, no hay nadie de ningún lado.
+  // - undefined -> el otro lado todavía depende de una decisión pendiente en
+  //   otra parte de la llave (no es un bye todavía, pero nunca va a jugarse:
+  //   en cuanto se decida esa otra parte, avanzarGanador lo va a resolver solo).
+  const esByeVacio = partido.jugadorA === null && partido.jugadorB === null;
+  const esByeDecidido =
+    (partido.jugadorA === null && typeof partido.jugadorB === "string") ||
+    (partido.jugadorB === null && typeof partido.jugadorA === "string");
 
-  if (esBye) {
+  if (esByeVacio) {
+    const vacio = document.createElement("span");
+    vacio.className = "torneo-bye-etiqueta";
+    vacio.textContent = "(sin participantes)";
+    contenedor.appendChild(vacio);
+    return contenedor;
+  }
+
+  if (esByeDecidido) {
     const ganadorPorBye = partido.jugadorA === null ? partido.jugadorB : partido.jugadorA;
     contenedor.appendChild(crearBotonJugador(ganadorPorBye));
     const etiquetaBye = document.createElement("span");
@@ -1387,18 +1454,24 @@ function crearElementoDePartido(partido, alElegir) {
     return contenedor;
   }
 
-  contenedor.appendChild(
-    partido.jugadorA === undefined ? crearMarcadorPorDefinir() : crearBotonJugador(partido.jugadorA)
-  );
+  function crearLado(jugador) {
+    if (jugador === null) {
+      const marcador = document.createElement("span");
+      marcador.className = "torneo-jugador--tbd";
+      marcador.textContent = "(nadie)";
+      return marcador;
+    }
+    return jugador === undefined ? crearMarcadorPorDefinir() : crearBotonJugador(jugador);
+  }
+
+  contenedor.appendChild(crearLado(partido.jugadorA));
 
   const separador = document.createElement("span");
   separador.className = "torneo-vs";
   separador.textContent = "vs";
   contenedor.appendChild(separador);
 
-  contenedor.appendChild(
-    partido.jugadorB === undefined ? crearMarcadorPorDefinir() : crearBotonJugador(partido.jugadorB)
-  );
+  contenedor.appendChild(crearLado(partido.jugadorB));
 
   return contenedor;
 }
@@ -1459,6 +1532,17 @@ function crearElementoDePartidoRonda1(partido, indicePartido, alElegirGanador, a
   if (esBye) {
     const esJugadorAPorBye = partido.jugadorA !== null;
     const ganadorPorBye = esJugadorAPorBye ? partido.jugadorA : partido.jugadorB;
+
+    // Con muchos más pases libres que participantes, un cruce puede quedar
+    // sin nadie de ningún lado: nada para nombrar, editar ni intercambiar acá.
+    if (ganadorPorBye === null) {
+      const vacio = document.createElement("span");
+      vacio.className = "torneo-bye-etiqueta";
+      vacio.textContent = "(sin participantes)";
+      contenedor.appendChild(vacio);
+      return contenedor;
+    }
+
     contenedor.appendChild(crearCasillero(ganadorPorBye, esJugadorAPorBye));
     const etiquetaBye = document.createElement("span");
     etiquetaBye.className = "torneo-bye-etiqueta";
