@@ -35,6 +35,10 @@
      aunque el tono sea parecido). */
   --color-danger: #c94f4f;
   --color-danger-bg: #fbe8e8;
+
+  /* Fondo semitransparente de la tarjeta de resultado que flota sobre el
+     formulario (mismo tono que --color-background, con transparencia). */
+  --color-overlay-bg: rgba(247, 246, 251, 0.92);
 }
 
 * {
@@ -264,6 +268,35 @@ footer {
   gap: 1.1rem;
 }
 
+/* El resultado "flota" sobre el formulario en vez de aparecer más abajo:
+   .zona-resultado es el marco de referencia (position: relative) para poder
+   ubicar el overlay encima con position: absolute. */
+.zona-resultado {
+  position: relative;
+}
+
+.formulario-herramienta.difuminado {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.resultado-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background-color: var(--color-overlay-bg);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card-hover);
+}
+
 .campo {
   display: flex;
   flex-direction: column;
@@ -455,6 +488,44 @@ footer {
 .resultado-slot.resultado-suspenso {
   color: var(--color-text-secondary);
   animation: latido-suspenso 0.5s ease-in-out infinite;
+}
+
+/* Resultado del generador de grupos: una tarjeta por grupo, cada una con su
+   lista de integrantes (distinto de .resultado-herramienta, que es para un
+   resultado de valores sueltos como números o nombres). */
+.resultado-grupos {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.grupo-tarjeta {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 1rem;
+}
+
+.grupo-tarjeta h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-grupos);
+  margin-bottom: 0.6rem;
+}
+
+.grupo-tarjeta ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.grupo-tarjeta li {
+  font-size: 0.9rem;
+  padding: 0.35rem 0.5rem;
+  background-color: var(--color-grupos-bg);
+  border-radius: 6px;
 }
 
 /* Ruleta visual: la flecha queda fija arriba, y lo único que gira es el <svg>

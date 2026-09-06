@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   configurarNavegacionHerramientas();
   configurarGeneradorDeNumeros();
   configurarSelectorDeNombres();
+  configurarGeneradorDeGrupos();
 });
 
 // --- Navegación entre la pantalla de inicio y la pantalla de una herramienta ---
@@ -35,6 +36,7 @@ function configurarNavegacionHerramientas() {
 
   conectarHerramienta("btn-generador-numeros", "pantalla-generador-numeros", "btn-volver-numeros");
   conectarHerramienta("btn-selector-nombres", "pantalla-selector-nombres", "btn-volver-selector");
+  conectarHerramienta("btn-generador-grupos", "pantalla-generador-grupos", "btn-volver-grupos");
 }
 
 // --- Utilidades compartidas entre herramientas ---
@@ -45,6 +47,26 @@ function crearCasillero(contenido) {
   casillero.className = "resultado-slot";
   casillero.textContent = contenido;
   return casillero;
+}
+
+// El resultado "flota" sobre el formulario (que queda difuminado y no se
+// puede tocar hasta volver). Lo usan las tres herramientas con resultado.
+function mostrarOverlayDeResultado(formulario, overlay) {
+  formulario.classList.add("difuminado");
+  overlay.hidden = false;
+}
+
+function ocultarOverlayDeResultado(formulario, overlay) {
+  overlay.hidden = true;
+  formulario.classList.remove("difuminado");
+}
+
+// El botón "Volver" de abajo del resultado solo cierra el overlay: el
+// formulario y lo que el usuario ya escribió quedan intactos.
+function configurarBotonVolverDeResultado(idBoton, formulario, overlay) {
+  document.getElementById(idBoton).addEventListener("click", () => {
+    ocultarOverlayDeResultado(formulario, overlay);
+  });
 }
 
 // --- Generador de números ---
@@ -139,10 +161,19 @@ function mostrarResultadoRuleta(numeros, minimo, maximo, elementoResultado, elem
 
 function configurarGeneradorDeNumeros() {
   const formulario = document.getElementById("form-generador-numeros");
+  const overlay = document.getElementById("overlay-generador-numeros");
   const botonGenerar = formulario.querySelector(".boton-generar");
   const elementoError = document.getElementById("error-generador-numeros");
   const elementoResultado = document.getElementById("resultado-generador-numeros");
   const elementoAnuncio = document.getElementById("anuncio-resultado-numeros");
+
+  configurarBotonVolverDeResultado("btn-volver-resultado-numeros", formulario, overlay);
+
+  // Si quedó un resultado abierto de una visita anterior, arrancamos de cero
+  // cada vez que se vuelve a entrar a la herramienta desde el inicio.
+  document.getElementById("btn-generador-numeros").addEventListener("click", () => {
+    ocultarOverlayDeResultado(formulario, overlay);
+  });
 
   formulario.addEventListener("submit", (evento) => {
     evento.preventDefault(); // evita que la página se recargue
@@ -157,13 +188,13 @@ function configurarGeneradorDeNumeros() {
     if (mensajeError) {
       elementoError.textContent = mensajeError;
       elementoError.hidden = false;
-      elementoResultado.innerHTML = "";
       return;
     }
 
     elementoError.hidden = true;
     const numeros = generarNumeros(minimo, maximo, cantidad, permitirRepetidos);
 
+    mostrarOverlayDeResultado(formulario, overlay);
     botonGenerar.disabled = true;
     mostrarResultadoRuleta(numeros, minimo, maximo, elementoResultado, elementoAnuncio, () => {
       botonGenerar.disabled = false;
@@ -171,7 +202,11 @@ function configurarGeneradorDeNumeros() {
   });
 }
 
-// --- Selector de nombres/palabras ---
+// --- Lista dinámica de opciones ("Opción 1", "Opción 2"...) ---
+// La usan el selector de nombres/palabras y el generador de grupos (y
+// probablemente el mezclador y los torneos, más adelante): cada una arma su
+// propio contenedor en el HTML con la clase .contenedor-opciones, y le puede
+// dar su propio texto de etiqueta con data-etiqueta ("Opción", "Participante").
 
 // Una opción es válida si tiene al menos una letra (puede tener números
 // mezclados, ej. "Equipo 1", pero "123" solo no alcanza).
@@ -186,7 +221,7 @@ function contieneAlMenosUnaLetra(texto) {
 // opción": el contenido de los campos siguientes sube un lugar para tapar
 // el hueco, y sobra un campo al final que se elimina.
 function sincronizarListaDeOpciones(campoEditado) {
-  const contenedor = document.getElementById("contenedor-opciones");
+  const contenedor = campoEditado.closest(".contenedor-opciones");
   const inputs = Array.from(contenedor.querySelectorAll(".input-opcion"));
   const indiceEditado = inputs.indexOf(campoEditado);
   const esUltimo = indiceEditado === inputs.length - 1;
@@ -221,21 +256,25 @@ function agregarCampoDeOpcion(contenedor) {
 // El número de cada campo ("Opción 1", "Opción 2"...) es siempre su posición
 // actual en la lista, no un contador que solo sube: así, si se borra un campo
 // del medio, los que quedan se renumeran para no dejar huecos (ej. "Opción 1,
-// Opción 3" nunca debería verse).
+// Opción 3" nunca debería verse). El texto de la etiqueta ("Opción", "Participante")
+// sale de data-etiqueta en el propio contenedor, para poder reusar todo esto
+// en varias herramientas sin repetir código.
 function renumerarCampos(contenedor) {
+  const etiquetaTexto = contenedor.dataset.etiqueta || "Opción";
   const campos = contenedor.querySelectorAll(".campo-opcion");
   campos.forEach((campo, indice) => {
     const numero = indice + 1;
-    campo.querySelector("label").setAttribute("for", `opcion-${numero}`);
-    campo.querySelector("label").textContent = `Opción ${numero}`;
-    campo.querySelector(".input-opcion").id = `opcion-${numero}`;
+    const id = `${contenedor.id}-${numero}`;
+    campo.querySelector("label").setAttribute("for", id);
+    campo.querySelector("label").textContent = `${etiquetaTexto} ${numero}`;
+    campo.querySelector(".input-opcion").id = id;
   });
 }
 
 // Un solo listener en el contenedor alcanza para todos los campos, incluso
 // los que todavía no existen (esto se llama "delegación de eventos").
-function configurarListaDeOpciones() {
-  const contenedor = document.getElementById("contenedor-opciones");
+function configurarListaDeOpciones(idContenedor) {
+  const contenedor = document.getElementById(idContenedor);
 
   contenedor.addEventListener("input", (evento) => {
     if (evento.target.classList.contains("input-opcion")) {
@@ -246,8 +285,8 @@ function configurarListaDeOpciones() {
 
 // El último campo (todavía vacío, esperando la próxima opción) queda afuera
 // solo, porque un texto vacío no tiene ninguna letra.
-function obtenerOpcionesValidas() {
-  const inputs = document.querySelectorAll("#contenedor-opciones .input-opcion");
+function obtenerOpcionesValidas(contenedor) {
+  const inputs = contenedor.querySelectorAll(".input-opcion");
   const opciones = [];
   inputs.forEach((input) => {
     const texto = input.value.trim();
@@ -534,9 +573,10 @@ function realizarRuletaDeNombres(opciones, cantidad, permitirRepetidos, contened
 }
 
 function configurarSelectorDeNombres() {
-  configurarListaDeOpciones();
+  configurarListaDeOpciones("contenedor-opciones");
 
   const formulario = document.getElementById("form-selector-nombres");
+  const overlay = document.getElementById("overlay-selector-nombres");
   const seccionEleccionModo = document.getElementById("selector-eleccion-modo");
   const botonVolverSelector = document.getElementById("btn-volver-selector");
   const botonElegir = formulario.querySelector(".boton-generar");
@@ -544,6 +584,9 @@ function configurarSelectorDeNombres() {
   const elementoResultado = document.getElementById("resultado-selector-nombres");
   const elementoAnuncio = document.getElementById("anuncio-resultado-selector");
   const contenedorRuleta = document.getElementById("ruleta-nombres");
+  const contenedorOpciones = document.getElementById("contenedor-opciones");
+
+  configurarBotonVolverDeResultado("btn-volver-resultado-selector", formulario, overlay);
 
   // El modo elegido se guarda en el propio <form> (data-modo), así no hace
   // falta ningún radio button: el formulario "recuerda" con qué modo trabajar.
@@ -553,6 +596,7 @@ function configurarSelectorDeNombres() {
   function mostrarEleccionDeModo() {
     formulario.hidden = true;
     elementoError.hidden = true;
+    ocultarOverlayDeResultado(formulario, overlay);
     contenedorRuleta.hidden = true;
     elementoResultado.innerHTML = "";
     seccionEleccionModo.hidden = false;
@@ -579,7 +623,7 @@ function configurarSelectorDeNombres() {
   formulario.addEventListener("submit", (evento) => {
     evento.preventDefault();
 
-    const opciones = obtenerOpcionesValidas();
+    const opciones = obtenerOpcionesValidas(contenedorOpciones);
     const cantidad = Number(document.getElementById("selector-cantidad").value);
     const permitirRepetidos = document.getElementById("selector-repetidos").checked;
     const modoElegido = formulario.dataset.modo;
@@ -596,6 +640,7 @@ function configurarSelectorDeNombres() {
 
     elementoError.hidden = true;
     elementoResultado.innerHTML = "";
+    mostrarOverlayDeResultado(formulario, overlay);
     botonElegir.disabled = true;
 
     if (modoElegido === "ruleta") {
@@ -610,5 +655,153 @@ function configurarSelectorDeNombres() {
         botonElegir.disabled = false;
       });
     }
+  });
+}
+
+// --- Generador de grupos ---
+
+// Reordena una lista al azar (algoritmo de Fisher-Yates). No modifica la
+// lista original — devuelve una copia mezclada. Función genérica: cuando
+// construyamos el Mezclador (FASE 7), va a reusar esta misma función.
+function mezclarLista(lista) {
+  const mezclada = [...lista];
+  for (let i = mezclada.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [mezclada[i], mezclada[j]] = [mezclada[j], mezclada[i]];
+  }
+  return mezclada;
+}
+
+// Reparte "totalParticipantes" en "cantidadDeGrupos" grupos lo más parejos
+// posible: la diferencia entre el grupo más grande y el más chico nunca es
+// mayor a 1. Ejemplo: 21 personas en 4 grupos -> tamaños [6, 5, 5, 5].
+function calcularTamanosDeGrupos(totalParticipantes, cantidadDeGrupos) {
+  const tamanoBase = Math.floor(totalParticipantes / cantidadDeGrupos);
+  const sobrantes = totalParticipantes % cantidadDeGrupos;
+
+  const tamanos = [];
+  for (let i = 0; i < cantidadDeGrupos; i++) {
+    tamanos.push(tamanoBase + (i < sobrantes ? 1 : 0));
+  }
+  return tamanos;
+}
+
+// Mezcla a los participantes y los corta en la cantidad de grupos pedida,
+// con los tamaños balanceados de calcularTamanosDeGrupos.
+function crearGrupos(participantes, cantidadDeGrupos) {
+  const participantesMezclados = mezclarLista(participantes);
+  const tamanos = calcularTamanosDeGrupos(participantes.length, cantidadDeGrupos);
+
+  const grupos = [];
+  let indice = 0;
+  tamanos.forEach((tamano) => {
+    grupos.push(participantesMezclados.slice(indice, indice + tamano));
+    indice += tamano;
+  });
+  return grupos;
+}
+
+function validarDatosDeGrupos(participantes, numero, modo) {
+  if (participantes.length === 0) {
+    return "Agregá al menos un participante antes de generar grupos.";
+  }
+  if (!Number.isInteger(numero) || numero < 1) {
+    return "Ese número tiene que ser al menos 1.";
+  }
+  if (modo === "cantidad-grupos" && numero > participantes.length) {
+    return `No se pueden armar ${numero} grupos con solo ${participantes.length} participantes.`;
+  }
+  return null;
+}
+
+function mostrarGrupos(grupos, elementoResultado) {
+  elementoResultado.innerHTML = "";
+
+  grupos.forEach((grupo, indice) => {
+    const tarjeta = document.createElement("div");
+    tarjeta.className = "grupo-tarjeta";
+
+    const titulo = document.createElement("h3");
+    titulo.textContent = `Grupo ${indice + 1}`;
+    tarjeta.appendChild(titulo);
+
+    const lista = document.createElement("ul");
+    grupo.forEach((persona) => {
+      const item = document.createElement("li");
+      item.textContent = persona;
+      lista.appendChild(item);
+    });
+    tarjeta.appendChild(lista);
+
+    elementoResultado.appendChild(tarjeta);
+  });
+}
+
+function configurarGeneradorDeGrupos() {
+  configurarListaDeOpciones("contenedor-participantes");
+
+  const formulario = document.getElementById("form-generador-grupos");
+  const overlay = document.getElementById("overlay-generador-grupos");
+  const seccionEleccionModo = document.getElementById("grupos-eleccion-modo");
+  const botonVolver = document.getElementById("btn-volver-grupos");
+  const elementoError = document.getElementById("error-generador-grupos");
+  const elementoResultado = document.getElementById("resultado-generador-grupos");
+  const etiquetaNumero = document.getElementById("grupos-numero-etiqueta");
+  const contenedorParticipantes = document.getElementById("contenedor-participantes");
+
+  configurarBotonVolverDeResultado("btn-volver-resultado-grupos", formulario, overlay);
+
+  // Mismo patrón que en el selector de nombres: primero se elige el modo
+  // (acá, "por cantidad de grupos" o "por personas por grupo"), y recién
+  // después aparece el formulario para cargar participantes.
+  function mostrarEleccionDeModo() {
+    formulario.hidden = true;
+    elementoError.hidden = true;
+    ocultarOverlayDeResultado(formulario, overlay);
+    elementoResultado.innerHTML = "";
+    seccionEleccionModo.hidden = false;
+    botonVolver.hidden = false;
+  }
+
+  function elegirModo(modo) {
+    formulario.dataset.modo = modo;
+    etiquetaNumero.textContent = modo === "cantidad-grupos" ? "Cantidad de grupos" : "Personas por grupo";
+    seccionEleccionModo.hidden = true;
+    formulario.hidden = false;
+    botonVolver.hidden = true;
+  }
+
+  seccionEleccionModo.querySelectorAll(".herramienta").forEach((boton) => {
+    boton.addEventListener("click", () => elegirModo(boton.dataset.modo));
+  });
+
+  document.getElementById("btn-cambiar-modo-grupos").addEventListener("click", mostrarEleccionDeModo);
+  document.getElementById("btn-generador-grupos").addEventListener("click", mostrarEleccionDeModo);
+
+  formulario.addEventListener("submit", (evento) => {
+    evento.preventDefault();
+
+    const participantes = obtenerOpcionesValidas(contenedorParticipantes);
+    const numero = Number(document.getElementById("grupos-numero").value);
+    const modo = formulario.dataset.modo;
+
+    const mensajeError = validarDatosDeGrupos(participantes, numero, modo);
+
+    if (mensajeError) {
+      elementoError.textContent = mensajeError;
+      elementoError.hidden = false;
+      elementoResultado.innerHTML = "";
+      return;
+    }
+
+    elementoError.hidden = true;
+
+    const cantidadDeGrupos = modo === "cantidad-grupos"
+      ? numero
+      : Math.ceil(participantes.length / numero);
+
+    const grupos = crearGrupos(participantes, cantidadDeGrupos);
+    mostrarGrupos(grupos, elementoResultado);
+    mostrarOverlayDeResultado(formulario, overlay);
   });
 }

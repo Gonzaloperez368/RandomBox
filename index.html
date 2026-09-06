@@ -31,10 +31,12 @@
           <p class="herramienta-descripcion">Elegí elementos de una lista.</p>
         </button>
       </li>
-      <li class="herramienta herramienta--grupos">
-        <span class="herramienta-icono" aria-hidden="true">👥</span>
-        <h3 class="herramienta-nombre">Generador de grupos</h3>
-        <p class="herramienta-descripcion">Distribuí personas de forma aleatoria.</p>
+      <li>
+        <button type="button" id="btn-generador-grupos" class="herramienta herramienta--grupos">
+          <span class="herramienta-icono" aria-hidden="true">👥</span>
+          <h3 class="herramienta-nombre">Generador de grupos</h3>
+          <p class="herramienta-descripcion">Distribuí personas de forma aleatoria.</p>
+        </button>
       </li>
       <li class="herramienta herramienta--moneda">
         <span class="herramienta-icono" aria-hidden="true">🪙</span>
@@ -63,33 +65,40 @@
       </button>
       <h2 id="generador-numeros-titulo">Generador de números</h2>
 
-      <form id="form-generador-numeros" class="formulario-herramienta">
-        <div class="campo">
-          <label for="numero-minimo">Mínimo</label>
-          <input type="number" id="numero-minimo" name="minimo" value="1" step="1" required>
-        </div>
+      <div class="zona-resultado">
+        <form id="form-generador-numeros" class="formulario-herramienta">
+          <div class="campo">
+            <label for="numero-minimo">Mínimo</label>
+            <input type="number" id="numero-minimo" name="minimo" value="1" step="1" required>
+          </div>
 
-        <div class="campo">
-          <label for="numero-maximo">Máximo</label>
-          <input type="number" id="numero-maximo" name="maximo" value="100" step="1" required>
-        </div>
+          <div class="campo">
+            <label for="numero-maximo">Máximo</label>
+            <input type="number" id="numero-maximo" name="maximo" value="100" step="1" required>
+          </div>
 
-        <div class="campo">
-          <label for="numero-cantidad">Cantidad de números</label>
-          <input type="number" id="numero-cantidad" name="cantidad" value="1" min="1" step="1" required>
-        </div>
+          <div class="campo">
+            <label for="numero-cantidad">Cantidad de números</label>
+            <input type="number" id="numero-cantidad" name="cantidad" value="1" min="1" step="1" required>
+          </div>
 
-        <div class="campo campo-checkbox">
-          <input type="checkbox" id="numero-repetidos" name="repetidos" checked>
-          <label for="numero-repetidos">Permitir números repetidos</label>
-        </div>
+          <div class="campo campo-checkbox">
+            <input type="checkbox" id="numero-repetidos" name="repetidos" checked>
+            <label for="numero-repetidos">Permitir números repetidos</label>
+          </div>
 
-        <button type="submit" class="boton-generar">Generar</button>
-      </form>
+          <button type="submit" class="boton-generar">Generar</button>
+        </form>
+
+        <div id="overlay-generador-numeros" class="resultado-overlay" hidden>
+          <div id="resultado-generador-numeros" class="resultado-herramienta"></div>
+          <button type="button" class="boton-volver" id="btn-volver-resultado-numeros">
+            <span class="flecha-volver" aria-hidden="true">←</span> Volver
+          </button>
+        </div>
+      </div>
 
       <p id="error-generador-numeros" class="mensaje-error" role="alert" hidden></p>
-
-      <div id="resultado-generador-numeros" class="resultado-herramienta"></div>
       <p id="anuncio-resultado-numeros" class="visualmente-oculto" aria-live="polite"></p>
     </section>
 
@@ -115,40 +124,100 @@
         </div>
       </div>
 
-      <form id="form-selector-nombres" class="formulario-herramienta" hidden>
-        <button type="button" class="boton-volver" id="btn-cambiar-modo">
-          <span class="flecha-volver" aria-hidden="true">←</span> Cambiar modo
-        </button>
+      <div class="zona-resultado">
+        <form id="form-selector-nombres" class="formulario-herramienta" hidden>
+          <button type="button" class="boton-volver" id="btn-cambiar-modo">
+            <span class="flecha-volver" aria-hidden="true">←</span> Cambiar modo
+          </button>
 
-        <div class="contenedor-opciones" id="contenedor-opciones">
-          <div class="campo campo-opcion">
-            <label for="opcion-1">Opción 1</label>
-            <input type="text" id="opcion-1" class="input-opcion">
+          <div class="contenedor-opciones" id="contenedor-opciones" data-etiqueta="Opción">
+            <div class="campo campo-opcion">
+              <label for="contenedor-opciones-1">Opción 1</label>
+              <input type="text" id="contenedor-opciones-1" class="input-opcion">
+            </div>
           </div>
+
+          <div class="campo">
+            <label for="selector-cantidad">Cantidad a elegir</label>
+            <input type="number" id="selector-cantidad" name="cantidad" value="1" min="1" step="1" required>
+          </div>
+
+          <div class="campo campo-checkbox">
+            <input type="checkbox" id="selector-repetidos" name="repetidos">
+            <label for="selector-repetidos">Permitir elegir el mismo elemento más de una vez</label>
+          </div>
+
+          <button type="submit" class="boton-generar">Elegir</button>
+        </form>
+
+        <div id="overlay-selector-nombres" class="resultado-overlay" hidden>
+          <div id="ruleta-nombres" class="ruleta-contenedor" hidden aria-hidden="true">
+            <div class="ruleta-flecha"></div>
+            <svg class="ruleta-svg" viewBox="0 0 300 300"></svg>
+          </div>
+          <div id="resultado-selector-nombres" class="resultado-herramienta"></div>
+          <button type="button" class="boton-volver" id="btn-volver-resultado-selector">
+            <span class="flecha-volver" aria-hidden="true">←</span> Volver
+          </button>
         </div>
-
-        <div class="campo">
-          <label for="selector-cantidad">Cantidad a elegir</label>
-          <input type="number" id="selector-cantidad" name="cantidad" value="1" min="1" step="1" required>
-        </div>
-
-        <div class="campo campo-checkbox">
-          <input type="checkbox" id="selector-repetidos" name="repetidos">
-          <label for="selector-repetidos">Permitir elegir el mismo elemento más de una vez</label>
-        </div>
-
-        <button type="submit" class="boton-generar">Elegir</button>
-      </form>
-
-      <p id="error-selector-nombres" class="mensaje-error" role="alert" hidden></p>
-
-      <div id="ruleta-nombres" class="ruleta-contenedor" hidden aria-hidden="true">
-        <div class="ruleta-flecha"></div>
-        <svg class="ruleta-svg" viewBox="0 0 300 300"></svg>
       </div>
 
-      <div id="resultado-selector-nombres" class="resultado-herramienta"></div>
+      <p id="error-selector-nombres" class="mensaje-error" role="alert" hidden></p>
       <p id="anuncio-resultado-selector" class="visualmente-oculto" aria-live="polite"></p>
+    </section>
+
+    <section id="pantalla-generador-grupos" class="pantalla-herramienta" hidden aria-labelledby="generador-grupos-titulo">
+      <button type="button" class="boton-volver" id="btn-volver-grupos">
+        <span class="flecha-volver" aria-hidden="true">←</span> Volver
+      </button>
+      <h2 id="generador-grupos-titulo">Generador de grupos</h2>
+
+      <div id="grupos-eleccion-modo" class="eleccion-modo">
+        <p class="eleccion-modo-titulo">¿Cómo querés armar los grupos?</p>
+        <div class="eleccion-modo-grid">
+          <button type="button" class="herramienta" data-modo="cantidad-grupos">
+            <span class="herramienta-icono" aria-hidden="true">🔢</span>
+            <h3 class="herramienta-nombre">Por cantidad de grupos</h3>
+            <p class="herramienta-descripcion">Elegís en cuántos grupos dividir a todos.</p>
+          </button>
+          <button type="button" class="herramienta" data-modo="personas-por-grupo">
+            <span class="herramienta-icono" aria-hidden="true">🧮</span>
+            <h3 class="herramienta-nombre">Por personas por grupo</h3>
+            <p class="herramienta-descripcion">Elegís cuántas personas entran en cada grupo.</p>
+          </button>
+        </div>
+      </div>
+
+      <div class="zona-resultado">
+        <form id="form-generador-grupos" class="formulario-herramienta" hidden>
+          <button type="button" class="boton-volver" id="btn-cambiar-modo-grupos">
+            <span class="flecha-volver" aria-hidden="true">←</span> Cambiar modo
+          </button>
+
+          <div class="contenedor-opciones" id="contenedor-participantes" data-etiqueta="Participante">
+            <div class="campo campo-opcion">
+              <label for="contenedor-participantes-1">Participante 1</label>
+              <input type="text" id="contenedor-participantes-1" class="input-opcion">
+            </div>
+          </div>
+
+          <div class="campo">
+            <label for="grupos-numero" id="grupos-numero-etiqueta">Cantidad de grupos</label>
+            <input type="number" id="grupos-numero" name="numero" value="2" min="1" step="1" required>
+          </div>
+
+          <button type="submit" class="boton-generar">Generar grupos</button>
+        </form>
+
+        <div id="overlay-generador-grupos" class="resultado-overlay" hidden>
+          <div id="resultado-generador-grupos" class="resultado-grupos"></div>
+          <button type="button" class="boton-volver" id="btn-volver-resultado-grupos">
+            <span class="flecha-volver" aria-hidden="true">←</span> Volver
+          </button>
+        </div>
+      </div>
+
+      <p id="error-generador-grupos" class="mensaje-error" role="alert" hidden></p>
     </section>
   </main>
 

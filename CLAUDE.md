@@ -37,7 +37,7 @@ RandomBox es una caja de herramientas web para elegir al azar, organizar persona
 - [x] FASE 2 — Diseño general
 - [x] FASE 3 — Generador de números (modo único: Ruleta)
 - [x] FASE 4 — Selector de nombres + ruleta
-- [ ] FASE 5 — Generador de grupos
+- [~] FASE 5 — Generador de grupos (generación balanceada lista; falta la edición manual)
 - [ ] FASE 6 — Lanzamiento de moneda
 - [ ] FASE 7 — Mezclador
 - [ ] FASE 8 — Base de torneos
@@ -94,6 +94,22 @@ Una sola página (`index.html`), sin router ni módulos: cada herramienta es un 
 
 `crearCasillero()` en `script.js` crea el `<span class="resultado-slot">` que usa cualquier herramienta para mostrar un elemento del resultado (número, nombre elegido, etc.). `.resultado-revelado` lo destaca al terminar, `.resultado-suspenso` lo hace "latir" mientras se espera (ver `mostrarConSuspenso`). No crear casilleros específicos por herramienta — reusar este.
 
+## Resultado de herramientas: overlay flotante (patrón fijo para todas)
+
+Pedido explícito del usuario, aplica a **todas** las herramientas con resultado, no solo a la que lo motivó: el resultado no aparece más abajo del formulario, aparece flotando **encima** de él, con el formulario difuminado y sin interacción detrás. Estructura que hay que repetir en cada herramienta nueva:
+
+```html
+<div class="zona-resultado">
+  <form class="formulario-herramienta" ...>...</form>
+  <div class="resultado-overlay" hidden>
+    <!-- acá va el resultado de la herramienta -->
+    <button type="button" class="boton-volver">← Volver</button>
+  </div>
+</div>
+```
+
+En JS: `mostrarOverlayDeResultado(formulario, overlay)` al generar un resultado con éxito, `configurarBotonVolverDeResultado(idBoton, formulario, overlay)` para conectar el botón "Volver" de abajo del resultado (cierra el overlay, el formulario y lo ya escrito quedan intactos — nunca se limpia nada). Los mensajes de error quedan **fuera** de `.zona-resultado`, no activan el overlay. Ver `configurarGeneradorDeNumeros`, `configurarSelectorDeNombres` y `configurarGeneradorDeGrupos` para ejemplos ya andando.
+
 ## Estado actual
 
 FASE 3 completada: generador de números con validación, siempre en modo Ruleta. Se probó primero con un selector Revelación/Ruleta, pero el usuario prefirió sacarlo: no quiere elegir un modo cada vez que genera, prefiere una única forma fija de mostrar el resultado.
@@ -106,4 +122,8 @@ Construido:
 - Modo **Ruleta**: rueda SVG de verdad, dibujada por código (`dibujarRuedaDeNombres`), que gira con una transición CSS controlada desde JS (`girarRuedaHasta`) y se frena exactamente en la porción ganadora (ángulo calculado, no aproximado). Si se pide más de un elemento, gira una vez por cada uno; sin repetición, la porción ganadora se saca de la rueda antes del siguiente giro.
 - **Elección de modo**: no es un `<fieldset>` de radio buttons — al entrar a la herramienta aparecen primero dos botones grandes (reusando la clase `.herramienta`, igual que las tarjetas del inicio) para elegir Revelación o Ruleta, y recién después se muestra el formulario con las opciones. El modo elegido se guarda en `formulario.dataset.modo`. Este patrón (elegir modo con botones grandes tipo tarjeta, antes de cargar datos) puede servir de referencia para otras herramientas que necesiten varios modos en el futuro.
 
-Próximo paso: FASE 5 — Generador de grupos (no avanzar sin que el usuario lo pida).
+FASE 5 en curso: generador de grupos. Reusa la lista dinámica de opciones (ahora generalizada: `configurarListaDeOpciones(idContenedor)` y `obtenerOpcionesValidas(contenedor)` reciben el contenedor en vez de tener el id fijo — así el selector de nombres y el generador de grupos comparten el mismo código sin duplicarlo). Reparto balanceado en `calcularTamanosDeGrupos` (la diferencia entre el grupo más grande y el más chico nunca supera 1) y `mezclarLista` (Fisher-Yates genérico, pensado para reusarse también en el Mezclador de FASE 7). Elección de modo con el mismo patrón de botones grandes que en FASE 4 ("por cantidad de grupos" vs. "por personas por grupo") — el usuario lo pidió así de entrada esta vez, no hubo que preguntar dos veces.
+
+Falta: la edición manual de grupos (mover una persona de un grupo a otro después de generar, sección 13 del spec original) — pendiente para un próximo paso, no construir sin que el usuario lo pida.
+
+Próximo paso: terminar FASE 5 con la edición manual, o seguir con FASE 6 si el usuario prefiere dejar la edición para más adelante (no asumir, preguntar).
