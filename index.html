@@ -38,10 +38,12 @@
           <p class="herramienta-descripcion">Distribuí personas de forma aleatoria.</p>
         </button>
       </li>
-      <li class="herramienta herramienta--moneda">
-        <span class="herramienta-icono" aria-hidden="true">🪙</span>
-        <h3 class="herramienta-nombre">Lanzamiento de moneda</h3>
-        <p class="herramienta-descripcion">Lanzá una moneda una o varias veces.</p>
+      <li>
+        <button type="button" id="btn-lanzamiento-moneda" class="herramienta herramienta--moneda">
+          <span class="herramienta-icono" aria-hidden="true">🪙</span>
+          <h3 class="herramienta-nombre">Lanzamiento de moneda</h3>
+          <p class="herramienta-descripcion">Lanzá una moneda una o varias veces.</p>
+        </button>
       </li>
       <li class="herramienta herramienta--mezclador">
         <span class="herramienta-icono" aria-hidden="true">🔀</span>
@@ -219,6 +221,40 @@
 
       <p id="error-generador-grupos" class="mensaje-error" role="alert" hidden></p>
       <p id="anuncio-generador-grupos" class="visualmente-oculto" aria-live="polite"></p>
+    </section>
+
+    <section id="pantalla-lanzamiento-moneda" class="pantalla-herramienta" hidden aria-labelledby="lanzamiento-moneda-titulo">
+      <button type="button" class="boton-volver" id="btn-volver-moneda">
+        <span class="flecha-volver" aria-hidden="true">←</span> Volver
+      </button>
+      <h2 id="lanzamiento-moneda-titulo">Lanzamiento de moneda</h2>
+
+      <div class="zona-resultado">
+        <form id="form-lanzamiento-moneda" class="formulario-herramienta">
+          <div class="campo">
+            <label for="moneda-cantidad">Cantidad de lanzamientos</label>
+            <input type="number" id="moneda-cantidad" name="cantidad" value="1" min="1" step="1" required>
+            <div class="atajos-cantidad">
+              <button type="button" class="boton-atajo" data-cantidad="1">1</button>
+              <button type="button" class="boton-atajo" data-cantidad="10">10</button>
+              <button type="button" class="boton-atajo" data-cantidad="100">100</button>
+            </div>
+          </div>
+
+          <button type="submit" class="boton-generar">Lanzar</button>
+        </form>
+
+        <div id="overlay-lanzamiento-moneda" class="resultado-overlay" hidden>
+          <p id="resumen-moneda" class="resumen-moneda"></p>
+          <div id="resultado-lanzamiento-moneda" class="resultado-herramienta"></div>
+          <button type="button" class="boton-volver" id="btn-volver-resultado-moneda">
+            <span class="flecha-volver" aria-hidden="true">←</span> Volver
+          </button>
+        </div>
+      </div>
+
+      <p id="error-lanzamiento-moneda" class="mensaje-error" role="alert" hidden></p>
+      <p id="anuncio-lanzamiento-moneda" class="visualmente-oculto" aria-live="polite"></p>
     </section>
   </main>
 

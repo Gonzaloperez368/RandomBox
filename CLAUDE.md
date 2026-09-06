@@ -38,7 +38,7 @@ RandomBox es una caja de herramientas web para elegir al azar, organizar persona
 - [x] FASE 3 — Generador de números (modo único: Ruleta)
 - [x] FASE 4 — Selector de nombres + ruleta
 - [x] FASE 5 — Generador de grupos
-- [ ] FASE 6 — Lanzamiento de moneda
+- [x] FASE 6 — Lanzamiento de moneda
 - [ ] FASE 7 — Mezclador
 - [ ] FASE 8 — Base de torneos
 - [ ] FASE 9 — Testing y correcciones
@@ -126,4 +126,6 @@ FASE 5 completada: generador de grupos. Reusa la lista dinámica de opciones (ah
 
 **Edición manual de grupos**: cada persona tiene un `<select>` ("mover a: Grupo N") en vez de drag-and-drop — mucho más simple de implementar bien y funciona igual de bien en celular. El estado real de los grupos vive en `gruposActuales` (variable dentro de `configurarGeneradorDeGrupos`, no solo en el HTML): mover a alguien es `splice` en el grupo de origen + `push` en el destino, y se vuelve a dibujar todo con `mostrarGrupos`. Un grupo puede quedar vacío después de mover gente — es un resultado válido, se muestra como tarjeta con el texto "Vacío".
 
-Próximo paso: FASE 6 — Lanzamiento de moneda (no avanzar sin que el usuario lo pida).
+FASE 6 completada: lanzamiento de moneda. Sin animación de giro (el spec permite que sea opcional, y con hasta 100+ lanzamientos de una vez animar cada uno sería lento) — reusa el mismo patrón de resultado flotante. Atajos 1/10/100 son botones que solo rellenan el campo de cantidad, no un modo aparte. `MAXIMO_LANZAMIENTOS = 10000` es un tope defensivo propio (no pedido por el spec) para evitar que un error de tipeo cuelgue el navegador dibujando demasiados casilleros — mismo criterio a aplicar si alguna herramienta futura permite cantidades sin límite explícito.
+
+Próximo paso: FASE 7 — Mezclador (no avanzar sin que el usuario lo pida).

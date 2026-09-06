@@ -329,6 +329,45 @@ footer {
   border-color: var(--color-primary);
 }
 
+.atajos-cantidad {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.boton-atajo {
+  flex: 1;
+  padding: 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.boton-atajo:hover {
+  border-color: var(--color-primary);
+}
+
+.boton-atajo:focus {
+  outline: none;
+}
+
+.boton-atajo:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.resumen-moneda {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-moneda);
+  text-align: center;
+}
+
 .campo-checkbox {
   flex-direction: row;
   align-items: center;

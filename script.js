@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   configurarGeneradorDeNumeros();
   configurarSelectorDeNombres();
   configurarGeneradorDeGrupos();
+  configurarLanzamientoDeMoneda();
 });
 
 // --- Navegación entre la pantalla de inicio y la pantalla de una herramienta ---
@@ -37,6 +38,7 @@ function configurarNavegacionHerramientas() {
   conectarHerramienta("btn-generador-numeros", "pantalla-generador-numeros", "btn-volver-numeros");
   conectarHerramienta("btn-selector-nombres", "pantalla-selector-nombres", "btn-volver-selector");
   conectarHerramienta("btn-generador-grupos", "pantalla-generador-grupos", "btn-volver-grupos");
+  conectarHerramienta("btn-lanzamiento-moneda", "pantalla-lanzamiento-moneda", "btn-volver-moneda");
 }
 
 // --- Utilidades compartidas entre herramientas ---
@@ -853,6 +855,99 @@ function configurarGeneradorDeGrupos() {
     gruposActuales = crearGrupos(participantes, cantidadDeGrupos);
     mostrarGrupos(gruposActuales, elementoResultado, moverPersona);
     elementoAnuncio.textContent = `Se generaron ${gruposActuales.length} grupos.`;
+    mostrarOverlayDeResultado(formulario, overlay);
+  });
+}
+
+// --- Lanzamiento de moneda ---
+
+function lanzarMoneda() {
+  return Math.random() < 0.5 ? "Cara" : "Cruz";
+}
+
+function lanzarMonedas(cantidad) {
+  const resultados = [];
+  for (let i = 0; i < cantidad; i++) {
+    resultados.push(lanzarMoneda());
+  }
+  return resultados;
+}
+
+function contarCarasYCruces(resultados) {
+  let caras = 0;
+  let cruces = 0;
+  resultados.forEach((resultado) => {
+    if (resultado === "Cara") {
+      caras++;
+    } else {
+      cruces++;
+    }
+  });
+  return { caras, cruces };
+}
+
+// Tope defensivo: nada en el spec pide un límite, pero sin uno un error de
+// tipeo (ej. un cero de más) podría pedirle al navegador dibujar cientos de
+// miles de casilleros y trabar la página.
+const MAXIMO_LANZAMIENTOS = 10000;
+
+function validarDatosMoneda(cantidad) {
+  if (!Number.isInteger(cantidad) || cantidad < 1) {
+    return "La cantidad de lanzamientos debe ser al menos 1.";
+  }
+  if (cantidad > MAXIMO_LANZAMIENTOS) {
+    return `Como máximo, ${MAXIMO_LANZAMIENTOS.toLocaleString("es-AR")} lanzamientos por vez.`;
+  }
+  return null;
+}
+
+function mostrarResultadoMoneda(resultados, elementoResumen, elementoResultado) {
+  const { caras, cruces } = contarCarasYCruces(resultados);
+  elementoResumen.textContent = `Caras: ${caras} — Cruces: ${cruces}`;
+
+  elementoResultado.innerHTML = "";
+  resultados.forEach((resultado) => {
+    elementoResultado.appendChild(crearCasillero(resultado));
+  });
+}
+
+function configurarLanzamientoDeMoneda() {
+  const formulario = document.getElementById("form-lanzamiento-moneda");
+  const overlay = document.getElementById("overlay-lanzamiento-moneda");
+  const elementoError = document.getElementById("error-lanzamiento-moneda");
+  const elementoResumen = document.getElementById("resumen-moneda");
+  const elementoResultado = document.getElementById("resultado-lanzamiento-moneda");
+  const elementoAnuncio = document.getElementById("anuncio-lanzamiento-moneda");
+  const campoCantidad = document.getElementById("moneda-cantidad");
+
+  configurarBotonVolverDeResultado("btn-volver-resultado-moneda", formulario, overlay);
+
+  document.getElementById("btn-lanzamiento-moneda").addEventListener("click", () => {
+    ocultarOverlayDeResultado(formulario, overlay);
+  });
+
+  formulario.querySelectorAll(".boton-atajo").forEach((boton) => {
+    boton.addEventListener("click", () => {
+      campoCantidad.value = boton.dataset.cantidad;
+    });
+  });
+
+  formulario.addEventListener("submit", (evento) => {
+    evento.preventDefault();
+
+    const cantidad = Number(campoCantidad.value);
+    const mensajeError = validarDatosMoneda(cantidad);
+
+    if (mensajeError) {
+      elementoError.textContent = mensajeError;
+      elementoError.hidden = false;
+      return;
+    }
+
+    elementoError.hidden = true;
+    const resultados = lanzarMonedas(cantidad);
+    mostrarResultadoMoneda(resultados, elementoResumen, elementoResultado);
+    elementoAnuncio.textContent = `${elementoResumen.textContent}.`;
     mostrarOverlayDeResultado(formulario, overlay);
   });
 }
