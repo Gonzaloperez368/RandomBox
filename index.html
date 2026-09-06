@@ -52,10 +52,12 @@
           <p class="herramienta-descripcion">Reordená una lista aleatoriamente.</p>
         </button>
       </li>
-      <li class="herramienta herramienta--torneos">
-        <span class="herramienta-icono" aria-hidden="true">🏆</span>
-        <h3 class="herramienta-nombre">Torneos</h3>
-        <p class="herramienta-descripcion">Creá enfrentamientos entre participantes.</p>
+      <li>
+        <button type="button" id="btn-torneo" class="herramienta herramienta--torneos">
+          <span class="herramienta-icono" aria-hidden="true">🏆</span>
+          <h3 class="herramienta-nombre">Torneos</h3>
+          <p class="herramienta-descripcion">Creá enfrentamientos entre participantes.</p>
+        </button>
       </li>
     </ul>
   </section>
@@ -305,6 +307,61 @@
 
       <p id="error-mezclador" class="mensaje-error" role="alert" hidden></p>
       <p id="anuncio-mezclador" class="visualmente-oculto" aria-live="polite"></p>
+    </section>
+
+    <section id="pantalla-torneo" class="pantalla-herramienta pantalla-herramienta--ancha" hidden aria-labelledby="torneo-titulo">
+      <button type="button" class="boton-volver" id="btn-volver-torneo">
+        <span class="flecha-volver" aria-hidden="true">←</span> Volver
+      </button>
+      <h2 id="torneo-titulo">Torneos</h2>
+
+      <div class="torneo-configuracion">
+        <div id="torneo-eleccion-tamano" class="eleccion-modo">
+          <p class="eleccion-modo-titulo">¿Cuántos jugadores?</p>
+          <div class="eleccion-modo-grid">
+            <button type="button" class="herramienta" data-tamano="4">
+              <span class="herramienta-icono" aria-hidden="true">🏆</span>
+              <h3 class="herramienta-nombre">4 jugadores</h3>
+            </button>
+            <button type="button" class="herramienta" data-tamano="8">
+              <span class="herramienta-icono" aria-hidden="true">🏆</span>
+              <h3 class="herramienta-nombre">8 jugadores</h3>
+            </button>
+            <button type="button" class="herramienta" data-tamano="16">
+              <span class="herramienta-icono" aria-hidden="true">🏆</span>
+              <h3 class="herramienta-nombre">16 jugadores</h3>
+            </button>
+            <button type="button" class="herramienta" data-tamano="32">
+              <span class="herramienta-icono" aria-hidden="true">🏆</span>
+              <h3 class="herramienta-nombre">32 jugadores</h3>
+            </button>
+          </div>
+        </div>
+
+        <form id="form-torneo" class="formulario-herramienta" hidden>
+          <button type="button" class="boton-volver" id="btn-cambiar-tamano-torneo">
+            <span class="flecha-volver" aria-hidden="true">←</span> Cambiar cantidad
+          </button>
+
+          <div class="contenedor-opciones" id="contenedor-participantes-torneo"></div>
+
+          <div class="acciones-formulario">
+            <button type="submit" class="boton-generar">Generar torneo</button>
+            <button type="reset" class="boton-limpiar">Limpiar</button>
+          </div>
+        </form>
+
+        <p id="error-torneo" class="mensaje-error" role="alert" hidden></p>
+      </div>
+
+      <div id="torneo-resultado-zona" class="torneo-resultado-zona" hidden>
+        <button type="button" class="boton-volver" id="btn-volver-resultado-torneo">
+          <span class="flecha-volver" aria-hidden="true">←</span> Editar participantes
+        </button>
+        <div id="resultado-torneo"></div>
+      </div>
+
+      <p id="anuncio-torneo" class="visualmente-oculto" aria-live="polite"></p>
     </section>
   </main>
 

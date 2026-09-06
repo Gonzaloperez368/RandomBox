@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   configurarGeneradorDeGrupos();
   configurarLanzamientoDeMoneda();
   configurarMezclador();
+  configurarTorneo();
 });
 
 // --- Navegación entre la pantalla de inicio y la pantalla de una herramienta ---
@@ -41,6 +42,7 @@ function configurarNavegacionHerramientas() {
   conectarHerramienta("btn-generador-grupos", "pantalla-generador-grupos", "btn-volver-grupos");
   conectarHerramienta("btn-lanzamiento-moneda", "pantalla-lanzamiento-moneda", "btn-volver-moneda");
   conectarHerramienta("btn-mezclador", "pantalla-mezclador", "btn-volver-mezclador");
+  conectarHerramienta("btn-torneo", "pantalla-torneo", "btn-volver-torneo");
 }
 
 // --- Utilidades compartidas entre herramientas ---
@@ -1051,4 +1053,549 @@ function configurarMezclador() {
   });
 
   document.getElementById("btn-volver-a-mezclar").addEventListener("click", mezclarYMostrar);
+}
+
+// --- Torneos (base: eliminación directa) ---
+// Una "ronda" es un array de partidos: { jugadorA, jugadorB, ganador }.
+// jugadorA/jugadorB puede ser: un nombre (string), null (bye: no juega nadie
+// ahí, solo tiene sentido en la ronda 1), o undefined (todavía no se sabe
+// quién llega ahí, esperando el resultado de la ronda anterior).
+//
+// El tamaño de la llave (4, 8, 16 o 32) se elige antes de cargar nombres,
+// como en el selector de nombres o el generador de grupos — por eso siempre
+// es una potencia de 2 y no hace falta calcularla a partir de la lista.
+
+// Nombre de cada ronda contando "para atrás" desde la final: la final siempre
+// se llama Final, la anterior Semifinal, la anterior a esa Cuartos de final,
+// la anterior a esa Octavos de final. Lo que sobra (solo pasa con 32
+// jugadores) se llama "Ronda" a secas.
+function nombreDeRonda(cantidadDeRondas, indiceRonda) {
+  const rondasHastaLaFinal = cantidadDeRondas - 1 - indiceRonda;
+  switch (rondasHastaLaFinal) {
+    case 0:
+      return "Final";
+    case 1:
+      return "Semifinal";
+    case 2:
+      return "Cuartos de final";
+    case 3:
+      return "Octavos de final";
+    default:
+      return `Ronda ${indiceRonda + 1}`;
+  }
+}
+
+function generarLlaveDeTorneo(participantes, tamanoDeLlave) {
+  const cantidadDeByes = tamanoDeLlave - participantes.length;
+
+  const casilleros = mezclarLista(participantes);
+  for (let i = 0; i < cantidadDeByes; i++) {
+    casilleros.push(null); // bye
+  }
+  const casillerosMezclados = mezclarLista(casilleros);
+
+  const primeraRonda = [];
+  for (let i = 0; i < casillerosMezclados.length; i += 2) {
+    const jugadorA = casillerosMezclados[i];
+    const jugadorB = casillerosMezclados[i + 1];
+    let ganador = null;
+    if (jugadorA === null) ganador = jugadorB;
+    else if (jugadorB === null) ganador = jugadorA;
+    primeraRonda.push({ jugadorA, jugadorB, ganador });
+  }
+
+  const rondas = [primeraRonda];
+  let cantidadDePartidosSiguiente = primeraRonda.length / 2;
+  while (cantidadDePartidosSiguiente >= 1) {
+    const ronda = [];
+    for (let i = 0; i < cantidadDePartidosSiguiente; i++) {
+      ronda.push({ jugadorA: undefined, jugadorB: undefined, ganador: null });
+    }
+    rondas.push(ronda);
+    cantidadDePartidosSiguiente /= 2;
+  }
+
+  // Los "bye" de la ronda 1 ya tienen ganador: los hacemos avanzar de una vez.
+  primeraRonda.forEach((partido, indice) => {
+    if (partido.ganador !== null) {
+      avanzarGanador(rondas, 0, indice, partido.ganador);
+    }
+  });
+
+  return rondas;
+}
+
+// Pone al ganador de un partido en el casillero que le corresponde en la
+// ronda siguiente (si la hay: la final no tiene ronda siguiente).
+function avanzarGanador(rondas, indiceRonda, indicePartido, ganador) {
+  const siguienteRonda = rondas[indiceRonda + 1];
+  if (!siguienteRonda) return;
+
+  const indicePartidoSiguiente = Math.floor(indicePartido / 2);
+  const partidoSiguiente = siguienteRonda[indicePartidoSiguiente];
+
+  if (indicePartido % 2 === 0) {
+    partidoSiguiente.jugadorA = ganador;
+  } else {
+    partidoSiguiente.jugadorB = ganador;
+  }
+}
+
+// Deshace lo que un ganador ya haya provocado más adelante en la llave.
+// Necesario para poder corregir un partido: si no se deshiciera, quedaría
+// un ganador "fantasma" en una ronda futura basado en una elección vieja.
+// También deshace el partido por el tercer puesto si lo que se está
+// corrigiendo es justo la semifinal de la que salió ese perdedor.
+function deshacerAvanceDeGanador(rondas, partidoPorTercerPuesto, indiceRonda, indicePartido) {
+  const siguienteRonda = rondas[indiceRonda + 1];
+  if (!siguienteRonda) return;
+
+  const indicePartidoSiguiente = Math.floor(indicePartido / 2);
+  const partidoSiguiente = siguienteRonda[indicePartidoSiguiente];
+
+  if (indicePartido % 2 === 0) {
+    partidoSiguiente.jugadorA = undefined;
+  } else {
+    partidoSiguiente.jugadorB = undefined;
+  }
+
+  if (partidoSiguiente.ganador !== null) {
+    const partidoSiguienteEraSemifinal = indiceRonda + 1 === rondas.length - 2;
+    if (partidoSiguienteEraSemifinal) {
+      limpiarCasilleroDeTercerPuesto(partidoPorTercerPuesto, indicePartidoSiguiente);
+    }
+    deshacerAvanceDeGanador(rondas, partidoPorTercerPuesto, indiceRonda + 1, indicePartidoSiguiente);
+    partidoSiguiente.ganador = null;
+  }
+}
+
+function limpiarCasilleroDeTercerPuesto(partidoPorTercerPuesto, indiceDeSemifinal) {
+  if (indiceDeSemifinal === 0) {
+    partidoPorTercerPuesto.jugadorA = undefined;
+  } else {
+    partidoPorTercerPuesto.jugadorB = undefined;
+  }
+  partidoPorTercerPuesto.ganador = null;
+}
+
+function elegirGanador(rondas, partidoPorTercerPuesto, indiceRonda, indicePartido, ganador) {
+  const partido = rondas[indiceRonda][indicePartido];
+  if (partido.ganador === ganador) return; // ya estaba elegido este mismo
+
+  if (partido.ganador !== null) {
+    deshacerAvanceDeGanador(rondas, partidoPorTercerPuesto, indiceRonda, indicePartido);
+  }
+
+  partido.ganador = ganador;
+  avanzarGanador(rondas, indiceRonda, indicePartido, ganador);
+
+  // El perdedor de una semifinal juega el partido por el tercer puesto.
+  const esSemifinal = indiceRonda === rondas.length - 2;
+  if (esSemifinal) {
+    const perdedor = partido.jugadorA === ganador ? partido.jugadorB : partido.jugadorA;
+    if (indicePartido === 0) {
+      partidoPorTercerPuesto.jugadorA = perdedor;
+    } else {
+      partidoPorTercerPuesto.jugadorB = perdedor;
+    }
+    partidoPorTercerPuesto.ganador = null; // por si ya se había decidido con el perdedor anterior
+  }
+}
+
+function elegirGanadorDeTercerPuesto(partidoPorTercerPuesto, ganador) {
+  partidoPorTercerPuesto.ganador = ganador;
+}
+
+// Solo para mostrarlo en pantalla: si el partido ya tiene ganador y quedó
+// en la posición B, devuelve una copia con las posiciones invertidas para
+// que el ganador se dibuje siempre primero. No toca el partido real —
+// hacer clic en cualquiera de los dos nombres sigue eligiendo ese nombre,
+// la posición no cambia qué se elige.
+function ponerGanadorPrimero(partido) {
+  if (!partido.ganador || partido.jugadorA === partido.ganador) {
+    return partido;
+  }
+  return { jugadorA: partido.jugadorB, jugadorB: partido.jugadorA, ganador: partido.ganador };
+}
+
+function validarDatosTorneo(participantes) {
+  if (participantes.length < 2) {
+    return "Agregá al menos 2 participantes para armar un torneo.";
+  }
+  return null;
+}
+
+// A diferencia de la lista dinámica de otras herramientas, acá la cantidad
+// de campos es fija (la eligió el usuario en el menú de tamaño): se dibujan
+// todos de una, no van apareciendo de a uno.
+function generarCamposDeParticipantesTorneo(contenedor, cantidad) {
+  contenedor.innerHTML = "";
+  for (let numero = 1; numero <= cantidad; numero++) {
+    const campo = document.createElement("div");
+    campo.className = "campo campo-opcion";
+
+    const etiqueta = document.createElement("label");
+    etiqueta.setAttribute("for", `torneo-participante-${numero}`);
+    etiqueta.textContent = `Participante ${numero}`;
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = `torneo-participante-${numero}`;
+
+    campo.appendChild(etiqueta);
+    campo.appendChild(input);
+    contenedor.appendChild(campo);
+  }
+}
+
+// Los campos vacíos no cuentan como participante (van a ser "bye" en la
+// llave). No hace falta un tope: la cantidad de campos ya es el tamaño elegido.
+function obtenerParticipantesDeTorneo(contenedor) {
+  const inputs = contenedor.querySelectorAll("input[type='text']");
+  const participantes = [];
+  inputs.forEach((input) => {
+    const texto = input.value.trim();
+    if (contieneAlMenosUnaLetra(texto)) {
+      participantes.push(texto);
+    }
+  });
+  return participantes;
+}
+
+function crearElementoDePartido(partido, alElegir) {
+  const contenedor = document.createElement("div");
+  contenedor.className = "torneo-partido";
+
+  function crearBotonJugador(jugador) {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "torneo-jugador";
+    if (jugador === partido.ganador) {
+      boton.classList.add("torneo-jugador--ganador");
+    }
+    boton.textContent = jugador;
+    boton.addEventListener("click", () => alElegir(jugador));
+    return boton;
+  }
+
+  function crearMarcadorPorDefinir() {
+    const marcador = document.createElement("span");
+    marcador.className = "torneo-jugador--tbd";
+    marcador.textContent = "Por definir";
+    return marcador;
+  }
+
+  const esBye = partido.jugadorA === null || partido.jugadorB === null;
+
+  if (esBye) {
+    const ganadorPorBye = partido.jugadorA === null ? partido.jugadorB : partido.jugadorA;
+    contenedor.appendChild(crearBotonJugador(ganadorPorBye));
+    const etiquetaBye = document.createElement("span");
+    etiquetaBye.className = "torneo-bye-etiqueta";
+    etiquetaBye.textContent = "(pasa libre)";
+    contenedor.appendChild(etiquetaBye);
+    return contenedor;
+  }
+
+  contenedor.appendChild(
+    partido.jugadorA === undefined ? crearMarcadorPorDefinir() : crearBotonJugador(partido.jugadorA)
+  );
+
+  const separador = document.createElement("span");
+  separador.className = "torneo-vs";
+  separador.textContent = "vs";
+  contenedor.appendChild(separador);
+
+  contenedor.appendChild(
+    partido.jugadorB === undefined ? crearMarcadorPorDefinir() : crearBotonJugador(partido.jugadorB)
+  );
+
+  return contenedor;
+}
+
+// Arma las columnas de UNA mitad de la llave (todas las rondas salvo la
+// final, que va sola en el centro). Cada columna se queda con la mitad de
+// los partidos de esa ronda que le toca a este lado, pero recordando el
+// índice real de cada partido dentro de su ronda completa (se necesita para
+// avisar bien de cuál partido se hizo clic).
+function armarColumnasDeMitad(rondas, esLadoDerecho) {
+  const columnas = [];
+
+  for (let indiceRonda = 0; indiceRonda < rondas.length - 1; indiceRonda++) {
+    const ronda = rondas[indiceRonda];
+    const mitad = ronda.length / 2;
+    const indiceInicial = esLadoDerecho ? mitad : 0;
+
+    const partidos = ronda.slice(indiceInicial, indiceInicial + mitad).map((partido, posicion) => ({
+      partido,
+      indicePartido: indiceInicial + posicion,
+    }));
+
+    columnas.push({ indiceRonda, partidos });
+  }
+
+  // El lado derecho se dibuja "al revés": la columna más cercana al centro
+  // es la que tiene un solo partido (la que alimenta la final).
+  if (esLadoDerecho) {
+    columnas.reverse();
+  }
+
+  return columnas;
+}
+
+// El nombre de la etapa ("Semifinal", "Cuartos de final"...) no es un título
+// fijo arriba de la columna: es hijo del primer partido/pareja, posicionado
+// con CSS justo encima de él. Así sigue a ese elemento adonde termine
+// quedando verticalmente.
+function crearTituloDeEtapa(texto) {
+  const titulo = document.createElement("h3");
+  titulo.className = "torneo-titulo-etapa";
+  titulo.textContent = texto;
+  return titulo;
+}
+
+// "Reloj de arena": el espacio entre partidos se duplica en cada ronda hacia
+// el centro. Es la única forma de que el partido de la ronda siguiente caiga
+// exactamente en el punto medio de los dos que lo alimentan: si dos
+// partidos están separados una distancia S (de centro a centro), el punto
+// medio entre ellos y el punto medio del próximo par quedan separados 2×S.
+// Como consecuencia, cada columna termina midiendo menos que la anterior.
+const ALTURA_PARTIDO_TORNEO_REM = 4.4; // debe coincidir con .torneo-partido
+const GAP_BASE_TORNEO_REM = 1; // separación entre partidos en la primera ronda
+
+function calcularGapDeRonda(indiceRonda) {
+  const espaciadoCentroACentro =
+    (ALTURA_PARTIDO_TORNEO_REM + GAP_BASE_TORNEO_REM) * Math.pow(2, indiceRonda);
+  return espaciadoCentroACentro - ALTURA_PARTIDO_TORNEO_REM;
+}
+
+// Una columna con más de un partido se dibuja en pares (para poder trazar la
+// línea conectora en forma de "codo" entre cada dos partidos y el siguiente).
+// La columna con un solo partido (la última antes de la final) lleva una
+// línea recta simple en vez de un codo.
+function crearColumnaDeTorneo(columnaInfo, cantidadDeRondas, esLadoDerecho, alElegirGanador) {
+  const columna = document.createElement("div");
+  columna.className = "torneo-columna";
+
+  const contenedorPartidos = document.createElement("div");
+  contenedorPartidos.className = "torneo-columna-partidos";
+
+  const gapDeEstaRonda = calcularGapDeRonda(columnaInfo.indiceRonda);
+  contenedorPartidos.style.gap = `${gapDeEstaRonda}rem`;
+
+  const ladoTexto = esLadoDerecho ? "derecha" : "izquierda";
+  const esColumnaDeUnSoloPartido = columnaInfo.partidos.length === 1;
+  const nombreDeEstaEtapa = nombreDeRonda(cantidadDeRondas, columnaInfo.indiceRonda);
+  let esElPrimerElementoDeLaColumna = true;
+
+  for (let i = 0; i < columnaInfo.partidos.length; i += esColumnaDeUnSoloPartido ? 1 : 2) {
+    const item = columnaInfo.partidos[i];
+    const elementoPartido = crearElementoDePartido(item.partido, (jugador) => {
+      alElegirGanador(columnaInfo.indiceRonda, item.indicePartido, jugador);
+    });
+
+    if (esColumnaDeUnSoloPartido) {
+      elementoPartido.classList.add(`torneo-partido--conector-${ladoTexto}`);
+      if (esElPrimerElementoDeLaColumna) {
+        elementoPartido.appendChild(crearTituloDeEtapa(nombreDeEstaEtapa));
+        esElPrimerElementoDeLaColumna = false;
+      }
+      contenedorPartidos.appendChild(elementoPartido);
+      continue;
+    }
+
+    const itemPareja = columnaInfo.partidos[i + 1];
+    const elementoPareja = crearElementoDePartido(itemPareja.partido, (jugador) => {
+      alElegirGanador(columnaInfo.indiceRonda, itemPareja.indicePartido, jugador);
+    });
+
+    const par = document.createElement("div");
+    par.className = `torneo-par torneo-par--${ladoTexto}`;
+    par.style.gap = `${gapDeEstaRonda}rem`;
+    par.appendChild(elementoPartido);
+    par.appendChild(elementoPareja);
+
+    if (esElPrimerElementoDeLaColumna) {
+      par.appendChild(crearTituloDeEtapa(nombreDeEstaEtapa));
+      esElPrimerElementoDeLaColumna = false;
+    }
+
+    contenedorPartidos.appendChild(par);
+  }
+
+  columna.appendChild(contenedorPartidos);
+  return columna;
+}
+
+function mostrarLlaveDeTorneo(rondas, partidoPorTercerPuesto, elementoResultado, alElegirGanador, alElegirGanadorTercerPuestoUI) {
+  elementoResultado.innerHTML = "";
+
+  const llaveDoble = document.createElement("div");
+  llaveDoble.className = "torneo-llave-doble";
+
+  const mitadIzquierda = document.createElement("div");
+  mitadIzquierda.className = "torneo-mitad torneo-mitad--izquierda";
+  armarColumnasDeMitad(rondas, false).forEach((columnaInfo) => {
+    mitadIzquierda.appendChild(crearColumnaDeTorneo(columnaInfo, rondas.length, false, alElegirGanador));
+  });
+
+  const mitadDerecha = document.createElement("div");
+  mitadDerecha.className = "torneo-mitad torneo-mitad--derecha";
+  armarColumnasDeMitad(rondas, true).forEach((columnaInfo) => {
+    mitadDerecha.appendChild(crearColumnaDeTorneo(columnaInfo, rondas.length, true, alElegirGanador));
+  });
+
+  const centro = document.createElement("div");
+  centro.className = "torneo-centro";
+
+  const partidoFinal = rondas[rondas.length - 1][0];
+
+  if (partidoFinal.ganador) {
+    const banner = document.createElement("p");
+    banner.className = "torneo-campeon";
+    banner.textContent = `🏆 Campeón: ${partidoFinal.ganador}`;
+    centro.appendChild(banner);
+  }
+
+  const tituloFinal = document.createElement("h3");
+  tituloFinal.className = "torneo-titulo-final";
+  tituloFinal.textContent = "Final";
+  centro.appendChild(tituloFinal);
+
+  const elementoFinal = crearElementoDePartido(partidoFinal, (jugador) =>
+    alElegirGanador(rondas.length - 1, 0, jugador)
+  );
+  elementoFinal.classList.add("torneo-partido--final", "torneo-partido--horizontal");
+  centro.appendChild(elementoFinal);
+
+  const tituloTercerPuesto = document.createElement("h3");
+  tituloTercerPuesto.className = "torneo-tercer-puesto-titulo";
+  tituloTercerPuesto.textContent = "Tercer puesto";
+  centro.appendChild(tituloTercerPuesto);
+
+  // Solo para mostrarlo: si ya hay un ganador, lo ponemos primero (no
+  // modifica partidoPorTercerPuesto, es una copia nada más para dibujar).
+  const vistaDeTercerPuesto = ponerGanadorPrimero(partidoPorTercerPuesto);
+  const elementoTercerPuesto = crearElementoDePartido(vistaDeTercerPuesto, alElegirGanadorTercerPuestoUI);
+  elementoTercerPuesto.classList.add("torneo-partido--horizontal");
+  centro.appendChild(elementoTercerPuesto);
+
+  llaveDoble.appendChild(mitadIzquierda);
+  llaveDoble.appendChild(centro);
+  llaveDoble.appendChild(mitadDerecha);
+
+  elementoResultado.appendChild(llaveDoble);
+}
+
+function configurarTorneo() {
+  const formulario = document.getElementById("form-torneo");
+  const zonaResultado = document.getElementById("torneo-resultado-zona");
+  const seccionEleccionTamano = document.getElementById("torneo-eleccion-tamano");
+  const botonVolver = document.getElementById("btn-volver-torneo");
+  const elementoError = document.getElementById("error-torneo");
+  const elementoResultado = document.getElementById("resultado-torneo");
+  const elementoAnuncio = document.getElementById("anuncio-torneo");
+  const contenedorParticipantes = document.getElementById("contenedor-participantes-torneo");
+
+  let rondasActuales = [];
+  let partidoPorTercerPuestoActual = { jugadorA: undefined, jugadorB: undefined, ganador: null };
+  let tamanoElegido = 0;
+
+  // El bracket necesita todo el ancho de la página, así que a diferencia de
+  // las otras herramientas no usa el overlay flotante: acá "mostrar el
+  // resultado" es simplemente destapar esta zona de la página, sin difuminar
+  // nada ni superponer una tarjeta encima del formulario.
+  function mostrarResultado() {
+    formulario.hidden = true;
+    zonaResultado.hidden = false;
+  }
+
+  function ocultarResultado() {
+    zonaResultado.hidden = true;
+    elementoResultado.innerHTML = "";
+  }
+
+  // Mismo patrón que en el selector de nombres y en grupos: primero se elige
+  // una opción en una pantalla aparte (acá, cuántos jugadores), y recién
+  // después aparece el formulario — ya con la cantidad de campos correcta.
+  function mostrarEleccionDeTamano() {
+    formulario.hidden = true;
+    elementoError.hidden = true;
+    ocultarResultado();
+    seccionEleccionTamano.hidden = false;
+    botonVolver.hidden = false;
+  }
+
+  function elegirTamano(tamano) {
+    tamanoElegido = tamano;
+    generarCamposDeParticipantesTorneo(contenedorParticipantes, tamano);
+    seccionEleccionTamano.hidden = true;
+    formulario.hidden = false;
+    botonVolver.hidden = true;
+  }
+
+  seccionEleccionTamano.querySelectorAll(".herramienta").forEach((boton) => {
+    boton.addEventListener("click", () => elegirTamano(Number(boton.dataset.tamano)));
+  });
+
+  document.getElementById("btn-cambiar-tamano-torneo").addEventListener("click", mostrarEleccionDeTamano);
+  document.getElementById("btn-torneo").addEventListener("click", mostrarEleccionDeTamano);
+
+  document.getElementById("btn-volver-resultado-torneo").addEventListener("click", () => {
+    zonaResultado.hidden = true;
+    formulario.hidden = false;
+  });
+
+  function redibujar() {
+    mostrarLlaveDeTorneo(rondasActuales, partidoPorTercerPuestoActual, elementoResultado, alElegirGanador, alElegirGanadorTercerPuesto);
+  }
+
+  function alElegirGanador(indiceRonda, indicePartido, jugador) {
+    elegirGanador(rondasActuales, partidoPorTercerPuestoActual, indiceRonda, indicePartido, jugador);
+    redibujar();
+
+    const rondaFinal = rondasActuales[rondasActuales.length - 1];
+    if (rondaFinal[0].ganador) {
+      elementoAnuncio.textContent = `Campeón: ${rondaFinal[0].ganador}.`;
+    } else {
+      elementoAnuncio.textContent = `${jugador} avanza de ronda.`;
+    }
+  }
+
+  function alElegirGanadorTercerPuesto(jugador) {
+    elegirGanadorDeTercerPuesto(partidoPorTercerPuestoActual, jugador);
+    redibujar();
+    elementoAnuncio.textContent = `Tercer puesto: ${jugador}.`;
+  }
+
+  formulario.addEventListener("reset", () => {
+    generarCamposDeParticipantesTorneo(contenedorParticipantes, tamanoElegido);
+    elementoError.hidden = true;
+  });
+
+  formulario.addEventListener("submit", (evento) => {
+    evento.preventDefault();
+
+    const participantes = obtenerParticipantesDeTorneo(contenedorParticipantes);
+    const mensajeError = validarDatosTorneo(participantes);
+
+    if (mensajeError) {
+      elementoError.textContent = mensajeError;
+      elementoError.hidden = false;
+      return;
+    }
+
+    elementoError.hidden = true;
+    rondasActuales = generarLlaveDeTorneo(participantes, tamanoElegido);
+    partidoPorTercerPuestoActual = { jugadorA: undefined, jugadorB: undefined, ganador: null };
+    redibujar();
+    elementoAnuncio.textContent = "Llave del torneo generada.";
+    mostrarResultado();
+
+    // Recién ahora que la zona de resultado dejó de estar hidden, scrollWidth
+    // y clientWidth reflejan el tamaño real ya renderizado. Movemos el
+    // scroll (no el CSS) para arrancar con la Final centrada en pantalla en
+    // vez del extremo izquierdo — sin esto, seguimos viendo Ronda 1 primero.
+    elementoResultado.scrollLeft = (elementoResultado.scrollWidth - elementoResultado.clientWidth) / 2;
+  });
 }

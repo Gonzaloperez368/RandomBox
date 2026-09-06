@@ -39,6 +39,16 @@
   /* Fondo semitransparente de la tarjeta de resultado que flota sobre el
      formulario (mismo tono que --color-background, con transparencia). */
   --color-overlay-bg: rgba(247, 246, 251, 0.92);
+
+  /* Línea de los conectores del bracket de torneos: más marcada que
+     --color-border (pensado para bordes finitos de tarjeta), porque acá
+     hay que poder seguirla con la vista de un partido al siguiente. */
+  --color-torneo-conector: #a8a7b8;
+
+  /* Distancia horizontal entre rondas del bracket: crece en pantallas
+     anchas y se achica en pantallas chicas, sin tocar el tamaño de las
+     tarjetas (eso lo controlan otras reglas, sin variables). */
+  --torneo-gap-ronda: clamp(1rem, 2.5vw, 3rem);
 }
 
 * {
@@ -215,6 +225,33 @@ footer {
   max-width: 480px;
   margin: 0 auto;
   padding: 1rem 1.5rem 2rem;
+}
+
+/* Los torneos necesitan mucho más ancho: varias rondas van una al lado de
+   la otra, y encerrar el bracket en un contenedor angosto es lo que lo hace
+   sentir "metido en un modal" en vez de ser el contenido principal. */
+.pantalla-herramienta--ancha {
+  max-width: 1400px;
+}
+
+/* La configuración (elegir cantidad, cargar participantes) sigue angosta y
+   centrada, como el resto de las herramientas — solo el bracket usa el
+   ancho completo. */
+.torneo-configuracion {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Línea divisoria entre "configuración" y "bracket", en vez de una tarjeta
+   que encierre al bracket. */
+.torneo-resultado-zona {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.torneo-resultado-zona .boton-volver {
+  margin-bottom: 1.5rem;
 }
 
 .boton-volver {
@@ -593,6 +630,328 @@ footer {
   font-weight: 700;
   color: var(--color-grupos);
   margin-bottom: 0.6rem;
+}
+
+/* #resultado-torneo es el contenedor CON scroll (nada de justify-content
+   acá): si centrara su contenido en el mismo elemento que tiene el scroll,
+   la mitad del desborde por la izquierda quedaría inalcanzable (el scroll
+   solo cubre "hacia la derecha", nunca valores negativos). */
+#resultado-torneo {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+/* .torneo-llave-doble es el LIENZO: mide lo que su contenido necesita
+   (width: max-content) pero nunca menos que el contenedor (min-width: 100%),
+   así que un bracket chico se ve centrado igual, y uno grande queda
+   accesible en punta a punta por scroll. */
+.torneo-llave-doble {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: var(--torneo-gap-ronda);
+  width: max-content;
+  min-width: 100%;
+}
+
+/* align-items: center (no stretch): cada columna mide su alto real —
+   ver la nota completa sobre el "reloj de arena" en .torneo-columna-partidos. */
+.torneo-mitad {
+  display: flex;
+  align-items: center;
+  gap: var(--torneo-gap-ronda);
+}
+
+/* El lado derecho ya viene con las columnas en el orden correcto desde JS
+   (armarColumnasDeMitad las da vuelta), así que acá no hace falta invertir
+   nada con CSS — solo cambia la dirección de las líneas conectoras. */
+
+.torneo-columna {
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+  flex-shrink: 0;
+}
+
+/* El nombre de cada etapa ya no es un título fijo arriba de toda la
+   columna: es hijo del primer partido/pareja de esa columna, posicionado
+   justo encima de él (con position:absolute). Así, si ese primer elemento
+   queda centrado más abajo por el truco de alineación de space-around
+   (como pasa con Semifinal, que tiene un solo partido), el título lo sigue
+   en vez de quedar pegado arriba del todo, separado de su partido. */
+.torneo-titulo-etapa {
+  position: absolute;
+  top: -1.6rem;
+  left: 0;
+  right: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-torneos);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* "Reloj de arena": el espacio entre partidos de una misma ronda se duplica
+   en cada ronda hacia el centro (es la única forma matemática de que el
+   partido de la ronda siguiente caiga justo en el punto medio de los dos
+   que lo alimentan — ver calcularGapDeRonda() en script.js, que calcula y
+   aplica ese gap acá y en .torneo-par). Como resultado, cada columna mide
+   menos que la anterior — de ahí la forma de "más grande a más chico".
+   El gap real lo pone JS; acá solo el padding para el título de arriba. */
+.torneo-columna-partidos {
+  display: flex;
+  flex-direction: column;
+  padding-top: 1.8rem;
+}
+
+.torneo-par {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.torneo-par--izquierda {
+  padding-right: calc(var(--torneo-gap-ronda) / 2);
+}
+
+.torneo-par--izquierda::after {
+  content: "";
+  position: absolute;
+  top: 2.2rem;
+  bottom: 2.2rem;
+  right: calc(var(--torneo-gap-ronda) / 2);
+  border-right: 2.5px solid var(--color-torneo-conector);
+}
+
+.torneo-par--izquierda::before {
+  content: "";
+  position: absolute;
+  top: calc(50% - 1.25px);
+  right: 0;
+  width: calc(var(--torneo-gap-ronda) / 2);
+  height: 2.5px;
+  background-color: var(--color-torneo-conector);
+}
+
+.torneo-par--derecha {
+  padding-left: calc(var(--torneo-gap-ronda) / 2);
+}
+
+.torneo-par--derecha::after {
+  content: "";
+  position: absolute;
+  top: 2.2rem;
+  bottom: 2.2rem;
+  left: calc(var(--torneo-gap-ronda) / 2);
+  border-left: 2.5px solid var(--color-torneo-conector);
+}
+
+.torneo-par--derecha::before {
+  content: "";
+  position: absolute;
+  top: calc(50% - 1.25px);
+  left: 0;
+  width: calc(var(--torneo-gap-ronda) / 2);
+  height: 2.5px;
+  background-color: var(--color-torneo-conector);
+}
+
+/* La columna con un solo partido (la que alimenta directo a la Final) lleva
+   una línea recta simple, sin codo, porque no hay dos partidos que unir.
+   El largo de la línea usa la misma variable que el gap entre rondas, para
+   que siga llegando bien cerca del centro sea cual sea el ancho de pantalla. */
+.torneo-partido--conector-izquierda {
+  position: relative;
+  margin-right: var(--torneo-gap-ronda);
+}
+
+.torneo-partido--conector-izquierda::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 1.25px);
+  right: calc(-1 * var(--torneo-gap-ronda));
+  width: var(--torneo-gap-ronda);
+  height: 2.5px;
+  background-color: var(--color-torneo-conector);
+}
+
+.torneo-partido--conector-derecha {
+  position: relative;
+  margin-left: var(--torneo-gap-ronda);
+}
+
+.torneo-partido--conector-derecha::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 1.25px);
+  left: calc(-1 * var(--torneo-gap-ronda));
+  width: var(--torneo-gap-ronda);
+  height: 2.5px;
+  background-color: var(--color-torneo-conector);
+}
+
+.torneo-centro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Los costados (.torneo-mitad) sí se estiran a la altura del más alto
+     (necesario para que los conectores queden alineados), pero el centro
+     no: se queda con su alto natural (mucho más bajo, es solo Final +
+     Tercer puesto) y se centra. Eso es lo que da la forma de "cintura"
+     angosta en el medio, como un reloj de arena acostado. */
+  align-self: center;
+  gap: 0.5rem;
+  min-width: 220px;
+  flex-shrink: 0;
+  padding: 0 0.5rem;
+}
+
+.torneo-centro h3 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-torneos);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* La Final es el punto visual principal del bracket: título en violeta
+   (en vez del rojo/naranja del resto de las rondas) y un poco más grande. */
+.torneo-centro h3.torneo-titulo-final {
+  color: var(--color-primary);
+  font-size: 0.9rem;
+}
+
+/* El tercer puesto está relacionado con la final pero no debe competir con
+   ella: título más chico y en gris, no en el color de acento de las rondas.
+   El margin-top grande lo separa claramente de la Final — es un partido
+   secundario, no una continuación directa del camino hacia la final. */
+.torneo-centro h3.torneo-tercer-puesto-titulo {
+  margin-top: 3.5rem;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.torneo-partido {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.5rem;
+  min-height: 4.4rem;
+  box-sizing: border-box;
+}
+
+/* Final y Tercer puesto comparten el mismo lenguaje de tarjeta que el resto,
+   pero en horizontal (más anchas que altas) en vez de vertical: se arman
+   con el mismo HTML (jugador, vs, jugador), esta clase solo cambia la
+   dirección del flex de columna a fila. */
+.torneo-partido--horizontal {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: auto;
+  min-width: 230px;
+}
+
+.torneo-partido--horizontal .torneo-jugador {
+  min-width: 90px;
+}
+
+/* La tarjeta de la Final se distingue del resto con un borde violeta y un
+   fondo apenas teñido — sutil, sin salirse del sistema visual del resto.
+   Un poco más de padding y de tamaño de fuente para que se note como la
+   más protagonista, sin duplicar su tamaño. */
+.torneo-partido--final {
+  border: 2px solid var(--color-primary);
+  background-color: var(--color-primary-bg);
+  padding: 0.85rem 1.4rem;
+}
+
+.torneo-partido--final .torneo-jugador {
+  font-size: 0.88rem;
+  padding: 0.4rem 0.7rem;
+}
+
+.torneo-vs {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* Un participante definido (asignado, todavía sin ganador decidido) se ve
+   como un dato real: fondo lleno, borde sólido. */
+.torneo-jugador {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.torneo-jugador:hover {
+  background-color: var(--color-surface);
+  border-color: var(--color-torneos);
+}
+
+.torneo-jugador:focus {
+  outline: none;
+}
+
+.torneo-jugador:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.torneo-jugador--ganador {
+  background-color: var(--color-torneos-bg);
+  border-color: var(--color-torneos);
+  color: var(--color-torneos);
+  font-weight: 700;
+}
+
+/* "Por definir" es lo opuesto de un dato real: sin relleno (transparente),
+   borde punteado, texto en cursiva y en gris — para que a simple vista se
+   note que ese casillero todavía no tiene a nadie asignado. */
+.torneo-jugador--tbd {
+  padding: 0.4rem 0.6rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  text-align: center;
+  font-style: italic;
+}
+
+.torneo-bye-etiqueta {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+  font-style: italic;
+}
+
+.torneo-campeon {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-torneos);
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
 .grupo-tarjeta ul {
